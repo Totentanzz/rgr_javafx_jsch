@@ -60,4 +60,9 @@ public class RemotePanel extends FilePanel {
     public void deleteFile(String path, String fileName) {
         remoteFiles.deleteFile(path,fileName);
     }
+
+    @Override
+    public void transferFile(String localTransferPath, String remoteFileDir, String fileName) {
+        remoteFiles.transferFile(localTransferPath,remoteFileDir,fileName);
+    }
 }

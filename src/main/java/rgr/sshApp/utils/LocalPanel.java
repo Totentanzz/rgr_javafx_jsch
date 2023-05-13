@@ -1,7 +1,5 @@
 package rgr.sshApp.utils;
 
-import javafx.fxml.Initializable;
-
 import java.io.IOException;
 import java.util.LinkedList;
 
@@ -55,5 +53,10 @@ public class LocalPanel extends FilePanel {
     @Override
     public void deleteFile(String path, String fileName) {
         localFiles.deleteFile(path,fileName);
+    }
+
+    @Override
+    public void transferFile(String remoteTransferPath, String localFileDir, String fileName) {
+        localFiles.transferFile(remoteTransferPath, localFileDir,fileName);
     }
 }

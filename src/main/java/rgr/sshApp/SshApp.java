@@ -14,7 +14,7 @@ public class SshApp extends Application {
         FXMLLoader fxmlLoader = new FXMLLoader(SshApp.class.getResource("view/loginView.fxml"));
         //FXMLLoader fxmlLoader = new FXMLLoader(SshApp.class.getResource("view/managerView.fxml"));
         stage = fxmlLoader.load();
-        //stage.initStyle(StageStyle.UNDECORATED);
+        stage.initStyle(StageStyle.UNDECORATED);
         //stage.setTitle("Hello!");
         stage.show();
     }

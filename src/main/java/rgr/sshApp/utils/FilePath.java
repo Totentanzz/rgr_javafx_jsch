@@ -23,6 +23,4 @@ public interface FilePath {
 
     void transferFile(String transferPath, String fileDir, String fileName);
 
-    void transferFolder(String path, String fileName);
-
 }

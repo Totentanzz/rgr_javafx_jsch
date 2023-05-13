@@ -90,9 +90,6 @@ public class SecureFileTransferChannel {
 
     public void changeDirectory(String remotePath) {
         try {
-            System.out.println("CD PATH = " + remotePath);
-            System.out.println("SFTP CHANNEL = " + sftpChannel);
-            System.out.println("CHANNEL IS CONNECTED" + sftpChannel.isConnected());
             sftpChannel.cd(remotePath);
             System.out.println("CHANGING DIRECTORY TO = " + remotePath + " HAS FINISHED");
         } catch (SftpException exc){

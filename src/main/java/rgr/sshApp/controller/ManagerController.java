@@ -1,6 +1,8 @@
 package rgr.sshApp.controller;
 
+import com.jcraft.jsch.Channel;
 import com.jcraft.jsch.ChannelSftp;
+import com.jcraft.jsch.JSchException;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -17,8 +19,10 @@ import rgr.sshApp.utils.FileInfo;
 import rgr.sshApp.web.SecureFileTransferChannel;
 import rgr.sshApp.web.SecureShellSession;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -79,52 +83,27 @@ public class ManagerController implements Initializable {
 
     public void uploadLocalFile(ActionEvent actionEvent) {
         startInNewThread(()->{
-            FileInfo selectedFileInfo = localPanel.getSelectedFile();
-            if (selectedFileInfo!=null) {
-                String selectedFileName = selectedFileInfo.getFileName();
-                Path localFilePath = Path.of(localPanel.getCurrentDir()).toAbsolutePath().normalize()
-                        .resolve(Path.of(selectedFileName));
+            FileInfo selectedFile = localPanel.getSelectedFile();
+            if (selectedFile!=null) {
+                String selectedFileName = selectedFile.getFileName();
                 String remoteDir = remotePanel.getCurrentDir();
-                SecureFileTransferChannel newSftpChannel = new SecureFileTransferChannel(sshSession.getSession());
-                newSftpChannel.connect();
-                System.out.println("New channel is connected = " + newSftpChannel.isConnnected());
-                System.out.println("Uploading file = " + localFilePath);
-                System.out.println("Uploading to the dir = " + remoteDir);
-                if (Files.isDirectory(localFilePath) && !selectedFileName.equals("..")) {
-                    uploadFolder(localFilePath,remoteDir,newSftpChannel);
-                } else {
-                    newSftpChannel.uploadFile(localFilePath.toString(),remoteDir);
-                }
-                Platform.runLater(()->remotePanel.refresh());
-                System.out.println("Upload finished");
-                newSftpChannel.disconnect();
-                System.out.println("New channel is disconnected = " + !newSftpChannel.isConnnected());
+                String localDir = localPanel.getCurrentDir();
+                localPanel.transferFile(remoteDir, localDir, selectedFileName);
+                Platform.runLater(() -> remotePanel.refresh());
             }
         });
     }
 
     public void downloadRemoteFile(ActionEvent actionEvent) {
-        startInNewThread(()->{
-            FileInfo selectedFile = remotePanel.getSelectedFile();
-            if (selectedFile!=null) {
-                String selectedFileName = selectedFile.getFileName();
-                String remoteFilePath = remotePanel.getCurrentDir() + "/" + selectedFileName;
-                Path currentDir = Path.of(localPanel.getCurrentDir()).toAbsolutePath().normalize();
-                SecureFileTransferChannel newSftpChannel = new SecureFileTransferChannel(sshSession.getSession());
-                newSftpChannel.connect();
-                System.out.println("New channel is connected = " + newSftpChannel.isConnnected());
-                System.out.println("Downloading file = " + remoteFilePath);
-                System.out.println("Downloading to the dir = " + currentDir);
-                if (selectedFile.getFileSize()==-1 && !selectedFileName.equals("..")) {
-                    downloadFolder(remoteFilePath,currentDir,newSftpChannel);
-                } else {
-                    newSftpChannel.downloadFile(remoteFilePath,currentDir.toString());
-                }
-                Platform.runLater(()->localPanel.refresh());
-                System.out.println("Downloading finished");
-                newSftpChannel.disconnect();
-                System.out.println("New channel is disconnected = " + !newSftpChannel.isConnnected());
-            }
+        startInNewThread(()-> {
+                    FileInfo selectedFile = remotePanel.getSelectedFile();
+                    if (selectedFile != null) {
+                        String selectedFileName = selectedFile.getFileName();
+                        String remoteDir = remotePanel.getCurrentDir();
+                        String localDir = localPanel.getCurrentDir();
+                        remotePanel.transferFile(localDir, remoteDir, selectedFileName);
+                        Platform.runLater(() -> localPanel.refresh());
+                    }
         });
     }
 
