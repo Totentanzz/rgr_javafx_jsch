@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<AnchorPane stylesheets="@contr.css" fx:id="ppp" prefHeight="453.0" prefWidth="631.0" xmlns="http://javafx.com/javafx/11.0.14-internal" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ex.test.HelloController">
+   <children>
+      <Pane AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+         <children>
+            <HBox alignment="CENTER" layoutX="216.0" layoutY="306.0" prefHeight="45.0" prefWidth="200.0" spacing="20.0">
+               <children>
+                  <Spinner editable="true" />
+                  <Spinner editable="true" />
+               </children>
+               <padding>
+                  <Insets left="10.0" right="10.0" />
+               </padding>
+            </HBox>
+            <HBox alignment="CENTER" layoutX="170.0" layoutY="213.0" prefHeight="93.0" prefWidth="292.0" spacing="20.0">
+               <children>
+                  <RadioButton mnemonicParsing="false" text="RadioButton" />
+                  <RadioButton mnemonicParsing="false" text="RadioButton" />
+                  <CheckBox mnemonicParsing="false" text="CheckBox" />
+               </children>
+            </HBox>
+             <Button fx:id="button" layoutX="208.0" layoutY="113.0" prefHeight="93.0" prefWidth="182.0" text="Hello!">
+             </Button>
+                <Label fx:id="welcomeText" prefHeight="17.0" prefWidth="81.0" />
+         </children>
+      </Pane>
+   </children>
+</AnchorPane>
