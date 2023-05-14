@@ -11,7 +11,6 @@ public class LocalPanel extends FilePanel {
         super();
         localFiles = new LocalFiles();
         initComboBox();
-        //initTable();
         updateTable(getInitialPath());
     }
 

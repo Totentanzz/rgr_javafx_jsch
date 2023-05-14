@@ -10,11 +10,11 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
 import javafx.stage.Window;
+import lombok.SneakyThrows;
 import rgr.sshApp.SshApp;
 
 import java.io.IOException;
 import java.net.URL;
-import java.nio.file.Path;
 import java.util.LinkedList;
 import java.util.ResourceBundle;
 
@@ -32,6 +32,8 @@ public abstract class FilePanel extends VBox implements Initializable, FilePath 
     private HBox controlsBox;
     @FXML
     private TableView<FileInfo> fileTable;
+    @FXML
+    private VBox panelBox;
 
     public FilePanel() {
         super();
@@ -106,6 +108,18 @@ public abstract class FilePanel extends VBox implements Initializable, FilePath 
         }
     }
 
+    public void transfer(String transferPath) {
+        startInNewThread(() -> {
+            FileInfo selectedFile = getSelectedFile();
+            if (selectedFile != null) {
+                String selectedFileName = selectedFile.getFileName();
+                String currentDir = getCurrentDir();
+                transferFile(transferPath, currentDir, selectedFileName);
+                Platform.runLater(() -> updateTable(currentDir));
+            }
+        });
+    }
+
     public void refresh() {
         updateTable(pathField.getText());
     }
@@ -153,6 +167,7 @@ public abstract class FilePanel extends VBox implements Initializable, FilePath 
 
     protected void initTableContextMenu() {
         MenuItem removeOption = new MenuItem("Remove file");
+        MenuItem moveOption = new MenuItem("Move file");
         removeOption.setOnAction(action -> {
             startInNewThread(()->{
                 FileInfo localFileInfo = fileTable.getSelectionModel().getSelectedItem();
@@ -161,6 +176,14 @@ public abstract class FilePanel extends VBox implements Initializable, FilePath 
                     String fileName = localFileInfo.getFileName();
                     deleteFile(curDir,fileName);
                     Platform.runLater(()->this.updateTable(pathField.getText()));
+                }
+            });
+        });
+        moveOption.setOnAction(action -> {
+            startInNewThread(()->{
+                FileInfo localFileInfo = fileTable.getSelectionModel().getSelectedItem();
+                if (localFileInfo!=null) {
+
                 }
             });
         });

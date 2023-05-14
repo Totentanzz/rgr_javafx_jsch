@@ -93,6 +93,7 @@ public class LoginController implements Initializable {
             if (sshSession.isEstablished()) {
                 System.out.println("CONNECTED SUCCESSFULLY");
                 modelData.setSshSession(sshSession);
+                //убрать стоку ниже одну
                 sshSession.getConstChannel().changeDirectory("/workspace/firstContainer/");
                 FXMLLoader fxmlLoader = new FXMLLoader(SshApp.class.getResource("view/managerView.fxml"));
                 Stage stage = null;
@@ -149,9 +150,9 @@ public class LoginController implements Initializable {
     }
 
     private void setDefaultText() {
-        ipField.setText("18.193.81.229");
-        portField.setText("50573");
+        ipField.setText("52.58.218.62");
+        portField.setText("54794");
         usernameField.setText("root");
-        hidePassField.setText("ckNZSjyl8mNvu6GRDQrHFGE");
+        hidePassField.setText("Un0CNuYnJc8sLyneLnUZ6");
     }
 }

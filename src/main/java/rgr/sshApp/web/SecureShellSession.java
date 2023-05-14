@@ -4,6 +4,7 @@ import com.jcraft.jsch.*;
 import lombok.Data;
 
 import java.io.*;
+import java.nio.file.Files;
 import java.util.Properties;
 
 @Data
@@ -66,7 +67,6 @@ public class SecureShellSession {
                 }
             } catch (IOException exc) {
                 System.out.println("SecureShell.executeCommand: bufferedReader closing error");
-                exc.printStackTrace();
             }
         }
         return responseBuilder.toString();

@@ -54,14 +54,14 @@ public class FileInfo {
         return new FileInfo(fileName,fileType,fileSize,date);
     }
 
-    public static String getFileName(String path) {
-        Path curPath = Path.of(path);
+    public static String getFileName(String filePath) {
+        Path curPath = Path.of(filePath);
         Path fileName = curPath.getFileName();
         return fileName==null ? curPath.getRoot().toString() : fileName.toString();
     }
 
-    public static String getFileDir(String path) {
-        Path curPath = Path.of(path);
+    public static String getFileDir(String filePath) {
+        Path curPath = Path.of(filePath);
         return curPath.getParent().toString();
     }
 
@@ -74,11 +74,11 @@ public class FileInfo {
         return fileType;
     }
 
-    public static long getFileSize(String path) {
-        Path curPath = Path.of(path);
+    public static long getFileSize(String filePath) {
+        Path curPath = Path.of(filePath);
         long fileSize = -1;
         try {
-            if (getFileType(path)!="")
+            if (getFileType(filePath)!="")
                 fileSize = Files.size(curPath);
         } catch (IOException exc) {
             System.out.println("FileInfo.getFileSize: cannot get size of file");
@@ -87,8 +87,8 @@ public class FileInfo {
         return fileSize;
     }
 
-    public static String getLastModificationDate(String path) {
-        Path curPath = Path.of(path);
+    public static String getLastModificationDate(String filePath) {
+        Path curPath = Path.of(filePath);
         SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
         String date = null;
         try {
@@ -98,13 +98,6 @@ public class FileInfo {
             exc.printStackTrace();
         }
         return date;
-    }
-
-    public static String[] toCommandsForm(String path) {
-        String fileName = getFileName(path), fileDir = getFileDir(path);
-        String stringFileName = fileName==null ? "^C" : fileName;
-        String stringFileDir = fileDir == null ? "." : fileDir;
-        return new String[]{stringFileDir,stringFileName};
     }
 
 }

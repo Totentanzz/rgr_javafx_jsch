@@ -13,7 +13,6 @@ public class RemotePanel extends FilePanel {
         super();
         this.remoteFiles = new RemoteFiles(ModelData.getInstance().getSshSession().getConstChannel());
         initComboBox();
-        //initTable();
         updateTable(getInitialPath());
     }
 

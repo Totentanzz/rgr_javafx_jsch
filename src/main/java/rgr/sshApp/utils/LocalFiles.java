@@ -83,29 +83,23 @@ public class LocalFiles extends Files {
 
     @Override
     public void transferFile(String remoteTransferPath, String localFileDir, String fileName) {
-        //FileInfo selectedFileInfo = localPanel.getSelectedFile();
-        //if (selectedFileInfo!=null) {
-   //         String selectedFileName = selectedFileInfo.getFileName();
-            Path localFilePath = Path.of(localFileDir).toAbsolutePath().normalize().resolve(fileName);
-            //String remoteDir = remotePanel.getCurrentDir();
-            SecureFileTransferChannel newSftpChannel = new SecureFileTransferChannel(ModelData
-                                                       .getInstance().getSshSession().getSession());
-            newSftpChannel.connect();
-            System.out.println("New channel is connected = " + newSftpChannel.isConnnected());
-            System.out.println("Uploading file = " + localFilePath);
-            System.out.println("Uploading to the dir = " + remoteTransferPath);
-            if (java.nio.file.Files.exists(localFilePath)) {
-                if (java.nio.file.Files.isDirectory(localFilePath) && !fileName.equals("..")) {
-                    uploadFolder(localFilePath,remoteTransferPath,fileName,newSftpChannel);
-                } else if (!java.nio.file.Files.isDirectory(localFilePath)) {
-                    newSftpChannel.uploadFile(localFilePath.toString(),remoteTransferPath);
-                }
+        Path localFilePath = Path.of(localFileDir).toAbsolutePath().normalize().resolve(fileName);
+        SecureFileTransferChannel newSftpChannel = new SecureFileTransferChannel(ModelData
+                                                   .getInstance().getSshSession().getSession());
+        newSftpChannel.connect();
+        System.out.println("New channel is connected = " + newSftpChannel.isConnnected());
+        System.out.println("Uploading file = " + localFilePath);
+        System.out.println("Uploading to the dir = " + remoteTransferPath);
+        if (java.nio.file.Files.exists(localFilePath)) {
+            if (java.nio.file.Files.isDirectory(localFilePath) && !fileName.equals("..")) {
+                uploadFolder(localFilePath,remoteTransferPath,fileName,newSftpChannel);
+            } else if (!java.nio.file.Files.isDirectory(localFilePath)) {
+                newSftpChannel.uploadFile(localFilePath.toString(),remoteTransferPath);
             }
-//            Platform.runLater(()->remotePanel.refresh());
-            System.out.println("Upload finished");
-            newSftpChannel.disconnect();
-            System.out.println("New channel is disconnected = " + !newSftpChannel.isConnnected());
-       // }
+        }
+        System.out.println("Upload finished");
+        newSftpChannel.disconnect();
+        System.out.println("New channel is disconnected = " + !newSftpChannel.isConnnected());
     }
 
     private void uploadFolder(Path localPath, String remotePath, String fileName, SecureFileTransferChannel channel) {
@@ -129,7 +123,6 @@ public class LocalFiles extends Files {
         } catch (IOException exc) {
             System.out.println("ManagerController.uploadFolder: recursive method/file listing error");
             exc.printStackTrace();
-            throw new RuntimeException();
         }
     }
 }

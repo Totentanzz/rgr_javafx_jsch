@@ -4,7 +4,7 @@
 <?import javafx.scene.image.*?>
 <?import javafx.scene.layout.*?>
 
-<fx:root spacing="3.0" stylesheets="@../css/panel.css" type="javafx.scene.layout.VBox" xmlns="http://javafx.com/javafx/11.0.14-internal" xmlns:fx="http://javafx.com/fxml/1">
+<fx:root fx:id="panelBox" alignment="CENTER" spacing="3.0" stylesheets="@../css/panel.css" type="javafx.scene.layout.VBox" xmlns="http://javafx.com/javafx/11.0.14-internal" xmlns:fx="http://javafx.com/fxml/1">
     <HBox fx:id="controlsBox" spacing="2.0">
         <children>
             <ComboBox fx:id="diskComboBox" onAction="#moveToFileSystemDir" prefHeight="25.0" prefWidth="66.0" />
@@ -29,6 +29,6 @@
             </Button>
         </children>
     </HBox>
-    <TableView fx:id="fileTable" onMouseClicked="#moveToSelectedDir" prefWidth="251.0" style="-fx-selection-bar: -fx-accent; -fx-selection-bar-non-focused: -fx-accent;" VBox.vgrow="ALWAYS" >
+    <TableView fx:id="fileTable" onMouseClicked="#moveToSelectedDir" prefWidth="251.0" style="-fx-selection-bar: -fx-accent; -fx-selection-bar-non-focused: -fx-accent;" VBox.vgrow="ALWAYS">
     </TableView>
 </fx:root>
