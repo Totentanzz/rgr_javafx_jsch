@@ -4,7 +4,6 @@ import com.jcraft.jsch.*;
 import lombok.Data;
 
 import java.io.*;
-import java.nio.file.Files;
 import java.util.Properties;
 
 @Data
@@ -17,7 +16,8 @@ public class SecureShellSession {
     private final static String sessionConfigFile = "src/main/resources/rgr/sshApp/configs/sessionConfig.properties";
 
     private Session session;
-    private SecureFileTransferChannel constChannel;
+    private SecureFileTransferChannel checkingChannel;
+    private SecureFileTransferChannel gettingFileListChannel;
 
     public boolean isEstablished() {
         return session.isConnected();
@@ -26,12 +26,15 @@ public class SecureShellSession {
     public void connect() throws JSchException {
         session = getNewSession();
         session.connect();
-        constChannel = new SecureFileTransferChannel(session);
-        constChannel.connect();
+        checkingChannel = new SecureFileTransferChannel(session);
+        checkingChannel.connect();
+        gettingFileListChannel = new SecureFileTransferChannel(session);
+        gettingFileListChannel.connect();
     }
 
     public void disconnect() {
-        constChannel.disconnect();
+        checkingChannel.disconnect();
+        gettingFileListChannel.disconnect();
         if (isEstablished()) session.disconnect();
     }
 
@@ -69,7 +72,7 @@ public class SecureShellSession {
                 System.out.println("SecureShell.executeCommand: bufferedReader closing error");
             }
         }
-        return responseBuilder.toString();
+        return (!responseBuilder.toString().isEmpty() ? responseBuilder.toString() : errorBuilder.toString());
     }
 
     private Session getNewSession() {

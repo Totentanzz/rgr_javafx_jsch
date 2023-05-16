@@ -8,7 +8,10 @@
 <?import javafx.stage.*?>
 <?import rgr.sshApp.utils.*?>
 
-<Stage fx:id="managerStage" onCloseRequest="#handleCloseRequest"  onShown="#initPanels" xmlns="http://javafx.com/javafx/11.0.14-internal" xmlns:fx="http://javafx.com/fxml/1" fx:controller="rgr.sshApp.controller.ManagerController">
+<Stage title="SSH File Manager" fx:id="managerStage" onCloseRequest="#handleCloseRequest"  onShown="#initPanels" xmlns="http://javafx.com/javafx/11.0.14-internal" xmlns:fx="http://javafx.com/fxml/1" fx:controller="rgr.sshApp.controller.ManagerController">
+    <icons>
+        <Image url="@../images/files-and-folders.png"/>
+    </icons>
    <scene>
       <Scene fx:id="managerScene">
          <root>

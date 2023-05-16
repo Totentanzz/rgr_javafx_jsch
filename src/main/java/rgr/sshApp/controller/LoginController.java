@@ -7,17 +7,20 @@ import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.image.Image;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 import rgr.sshApp.SshApp;
 import rgr.sshApp.model.ModelData;
-import rgr.sshApp.utils.ErrorAlert;
-import rgr.sshApp.utils.FileInfo;
+import rgr.sshApp.utils.CustomAlert;
 import rgr.sshApp.web.SecureShellSession;
 
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.URL;
+import java.nio.file.LinkOption;
+import java.nio.file.Path;
 import java.util.ResourceBundle;
 
 public class LoginController implements Initializable {
@@ -86,7 +89,7 @@ public class LoginController implements Initializable {
             sshSession.connect();
         } catch (JSchException | NumberFormatException exc) {
             System.out.println("LoginController.tryConnect: connection/parsing error");
-            ErrorAlert errorAlert = new ErrorAlert("Invalid connection params","Connection error");
+            CustomAlert errorAlert = new CustomAlert("Invalid connection params","Error",ButtonType.OK);
             errorAlert.initOwner(loginStage);
             errorAlert.showAndWait();
         } finally {
@@ -94,11 +97,12 @@ public class LoginController implements Initializable {
                 System.out.println("CONNECTED SUCCESSFULLY");
                 modelData.setSshSession(sshSession);
                 //убрать стоку ниже одну
-                sshSession.getConstChannel().changeDirectory("/workspace/firstContainer/");
+                sshSession.getCheckingChannel().changeDirectory("/workspace/firstContainer/");
                 FXMLLoader fxmlLoader = new FXMLLoader(SshApp.class.getResource("view/managerView.fxml"));
                 Stage stage = null;
                 try {
                     stage = fxmlLoader.load();
+                    stage.getIcons().add(new Image(new FileInputStream("src/main/resources/rgr/sshApp/images/files-and-folders.png")));
                     loginStage.close();
                     stage.show();
                 } catch (IOException exc) {
@@ -114,6 +118,14 @@ public class LoginController implements Initializable {
         initTextFields();
         setDefaultText();
         modelData = ModelData.getInstance();
+        String ab1 = "C:\\Users\\Ilya\\IdeaProjects\\rgr_javafx_jsch\\src\\main\\resources\\rgr\\sshApp\\images\\arrow.png";
+        String ab2 = "C:\\Users\\Ilya\\IdeaProjects\\rgr_javafx_jsch\\arrow.png";
+        Path path1 = Path.of(ab1).toAbsolutePath().normalize();
+        Path path2 = Path.of(ab2).toAbsolutePath().normalize();
+        boolean as1 = java.nio.file.Files.exists(path1);
+        boolean as2 = java.nio.file.Files.exists(path2);
+        System.out.println(as1);
+        System.out.println(as2);
     }
 
     private void initTextFields() {
@@ -150,9 +162,9 @@ public class LoginController implements Initializable {
     }
 
     private void setDefaultText() {
-        ipField.setText("52.58.218.62");
-        portField.setText("54794");
+        ipField.setText("3.74.216.87");
+        portField.setText("51323");
         usernameField.setText("root");
-        hidePassField.setText("Un0CNuYnJc8sLyneLnUZ6");
+        hidePassField.setText("o8cZhtwH2tDUaBLf0uQ7");
     }
 }

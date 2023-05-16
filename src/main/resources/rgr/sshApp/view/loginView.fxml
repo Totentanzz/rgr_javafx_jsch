@@ -9,6 +9,9 @@
 <?import javafx.stage.*?>
 
 <Stage fx:id="loginStage" xmlns="http://javafx.com/javafx/11.0.14-internal" xmlns:fx="http://javafx.com/fxml/1" fx:controller="rgr.sshApp.controller.LoginController">
+   <icons>
+      <Image url="@../images/welcomeLogo.png"/>
+   </icons>
    <scene>
       <Scene fx:id="loginScene" onMouseDragged="#dragWindow" onMousePressed="#grabWindow">
          <root>

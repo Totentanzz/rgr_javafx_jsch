@@ -15,6 +15,8 @@ import rgr.sshApp.web.SecureShellSession;
 
 import java.net.URL;
 import java.util.ResourceBundle;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class ManagerController implements Initializable {
 
@@ -67,10 +69,14 @@ public class ManagerController implements Initializable {
 
     public void uploadLocalFile(ActionEvent actionEvent) {
         localPanel.transfer(remotePanel.getCurrentDir());
+        disableButton(uploadButton,1);
+        remotePanel.refresh();
     }
 
     public void downloadRemoteFile(ActionEvent actionEvent) {
         remotePanel.transfer(localPanel.getCurrentDir());
+        disableButton(downloadButton,1);
+        localPanel.refresh();
     }
 
     @Override
@@ -84,4 +90,17 @@ public class ManagerController implements Initializable {
 
     public void initPanels(WindowEvent windowEvent) {
     }
+
+    private void disableButton(Button button,double seconds) {
+        button.setDisable(true);
+        Timer timer = new Timer();
+        timer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                button.setDisable(false);
+                timer.cancel();
+            };
+        }, (long) (seconds*1000));
+    }
+
 }

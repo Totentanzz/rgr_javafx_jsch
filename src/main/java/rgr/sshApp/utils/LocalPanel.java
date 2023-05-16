@@ -20,6 +20,11 @@ public class LocalPanel extends FilePanel {
     }
 
     @Override
+    public String getNextFileName(String fileName) {
+        return localFiles.getNextFileName(fileName);
+    }
+
+    @Override
     public LinkedList<FileInfo> getFileList(java.lang.String path) throws IOException {
         return localFiles.getFileList(path);
     }
@@ -40,13 +45,18 @@ public class LocalPanel extends FilePanel {
     }
 
     @Override
-    public java.lang.String getResolvedDirectory(String fileName, String currentPath) {
-        return localFiles.getResolvedDirectory(fileName,currentPath);
+    public java.lang.String getResolvedDirectory(String currentPath, String fileName) {
+        return localFiles.getResolvedDirectory(currentPath, fileName);
     }
 
     @Override
     public boolean isExists(String path, String fileName) {
         return localFiles.isExists(path,fileName);
+    }
+
+    @Override
+    public boolean isDir(String path, String fileName) {
+        return localFiles.isDir(path,fileName);
     }
 
     @Override
@@ -57,5 +67,10 @@ public class LocalPanel extends FilePanel {
     @Override
     public void transferFile(String remoteTransferPath, String localFileDir, String fileName) {
         localFiles.transferFile(remoteTransferPath, localFileDir,fileName);
+    }
+
+    @Override
+    public void moveFile(String distDir, String srcDir, String fileName, boolean forceFlag, boolean createNewFlag) throws IOException {
+        localFiles.moveFile(distDir,srcDir,fileName, forceFlag,createNewFlag);
     }
 }

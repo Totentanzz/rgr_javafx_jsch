@@ -15,27 +15,23 @@ import java.util.stream.Collectors;
 
 public class RemoteFiles extends Files {
 
-    private SecureShellSession sshSession;
-    private SecureFileTransferChannel channel;
+    private SecureFileTransferChannel gettingFileListChannel;
+    private SecureFileTransferChannel chekingChannel;
 
     public RemoteFiles() {
-        this.sshSession = ModelData.getInstance().getSshSession();
-        this.channel = sshSession.getConstChannel();
-    }
-
-    public RemoteFiles(SecureFileTransferChannel newChannel) {
-        this.sshSession = ModelData.getInstance().getSshSession();
-        this.channel = newChannel;
+        super();
+        this.gettingFileListChannel = this.sshSession.getGettingFileListChannel();
+        this.chekingChannel = this.sshSession.getCheckingChannel();
     }
 
     @Override
     public LinkedList<FileInfo> getFileList(String path) throws IOException {
         Vector<ChannelSftp.LsEntry> fileList = null;
         LinkedList<FileInfo> fileInfos = null;
-        if (channel!=null) {
-            fileList = channel.listDirectory(path);
+        if (gettingFileListChannel !=null) {
+            fileList = gettingFileListChannel.listDirectory(path);
             fileInfos = fileList.stream().filter(file-> !file.getFilename().equals("."))
-                        .map(FileInfo::parseFilePath).collect(Collectors.toCollection(LinkedList::new));
+                    .map(FileInfo::parseFilePath).collect(Collectors.toCollection(LinkedList::new));
         }
         return fileInfos;
     }
@@ -49,7 +45,7 @@ public class RemoteFiles extends Files {
 
     @Override
     public String getInitialPath() {
-        String pwd = channel.presentWorkingDirectory();
+        String pwd = chekingChannel.presentWorkingDirectory();
         return pwd;
     }
 
@@ -67,7 +63,7 @@ public class RemoteFiles extends Files {
     }
 
     @Override
-    public String getResolvedDirectory(String fileName, String currentPath) {
+    public String getResolvedDirectory(String currentPath, String fileName) {
         String resolvedDir = null;
         if (currentPath.equals("/")) {
             resolvedDir = currentPath + fileName;
@@ -80,40 +76,22 @@ public class RemoteFiles extends Files {
 
     @Override
     public boolean isExists(String path, String fileName) {
-        boolean existing = false;
-        channel.changeDirectory(path);
-        SftpATTRS attrs = channel.getAttrs(fileName);
-        existing = (attrs != null);
-        System.out.println("FILE IS EXISTING = " + existing);
-        return existing;
+        return chekingChannel.isExists(path,fileName);
     }
 
-    public byte isRemoteFileNewer(String remoteFilePath, String localDir, String fileName) {
-        SftpATTRS attrs = null;
-        String remoteParentDir = getParentDirectory(remoteFilePath);
-        Path localFilePath = Path.of(localDir).toAbsolutePath().normalize().resolve(fileName);
-        long localMTime = 0, remoteMTime = 0;
-        try {
-            channel.changeDirectory(remoteParentDir);
-            attrs = channel.getAttrs(fileName);
-            localMTime = java.nio.file.Files.getLastModifiedTime(localFilePath).to(TimeUnit.SECONDS);
-            remoteMTime = attrs.getMTime();
-        } catch (IOException exc) {
-            System.out.println("SecureShell.isRemoteFileNewer: can't get LastModifiedTime");
-        }
-        byte state = (byte)(remoteMTime - localMTime);
-        System.out.println("REMOTE FILE = " + fileName + " IS NEWER = " + state);
-        return state;
+    @Override
+    public boolean isDir(String path, String fileName) {
+        return chekingChannel.isDir(path,fileName);
     }
 
     @Override
     public void deleteFile(String path, String fileName) {
         SecureFileTransferChannel newChannel = new SecureFileTransferChannel(sshSession.getSession());
         newChannel.connect();
-        String filePath = this.getResolvedDirectory(fileName,path);
-        if (this.isExists(path,fileName)) {
+        String filePath = this.getResolvedDirectory(path, fileName);
+        if (newChannel.isExists(path,fileName)) {
             newChannel.changeDirectory(path);
-            if (newChannel.getAttrs(fileName).isDir()) {
+            if (newChannel.isDir(path,fileName)) {
                 sshSession.executeCommand("rm -rf " + filePath);
             } else {
                 newChannel.deleteFile(path,fileName);
@@ -145,6 +123,58 @@ public class RemoteFiles extends Files {
         System.out.println("Downloading finished");
         newSftpChannel.disconnect();
         System.out.println("New channel is disconnected = " + !newSftpChannel.isConnnected());
+    }
+
+    @Override
+    public void moveFile(String distDir, String srcDir, String fileName, boolean forceFlag, boolean createNewFlag) throws IOException {
+        String srcFilePath = srcDir + "/" + fileName;
+        String distFilePath = distDir + "/" + fileName;
+//        SecureFileTransferChannel newChannel = new SecureFileTransferChannel(sshSession.getSession());
+//        newChannel.connect();
+//        newChannel.changeDirectory(distDir);
+//        SftpATTRS attrs = newChannel.getAttrs(fileName);
+        String moveCommand = new StringBuilder()
+                         .append("mv ")
+                         .append(srcFilePath)
+                         .append(" ")
+                         .append(distDir)
+                         .toString();
+        if (!isExists(distDir,fileName)) {
+            System.out.println("SIT 0");
+            String response = sshSession.executeCommand(moveCommand);
+            System.out.println(response);
+        } else if (forceFlag) {
+            System.out.println("SIT 1");
+            System.out.println(moveCommand);
+            String response = null;
+            if (isDir(srcDir,fileName)) {
+                String removeDirCommand = "rmdir " + srcFilePath;
+                moveCommand = moveCommand.replace(srcFilePath,srcFilePath+"/*");
+                moveCommand = moveCommand +"/" + fileName + "/";
+                response = sshSession.executeCommand(moveCommand + ";" + removeDirCommand);
+            } else {
+                moveCommand = moveCommand.replaceFirst("mv ","mv -f ");
+                response = sshSession.executeCommand(moveCommand);
+            }
+            System.out.println(response);
+        } else if (createNewFlag) {
+            String newFileName = getNextFileName(fileName);
+            while (isExists(distDir,newFileName)) newFileName = getNextFileName(newFileName);
+            String newSrcFilePath = srcDir + "/" + newFileName;
+            String renameCommand = new StringBuilder()
+                                   .append("mv ")
+                                   .append(srcFilePath)
+                                   .append(" ")
+                                   .append(newSrcFilePath)
+                                   .toString();
+            moveCommand = moveCommand.replace(srcFilePath,newSrcFilePath);
+            String response = sshSession.executeCommand(renameCommand + ";" + moveCommand);
+            System.out.println(response);
+        } else {
+//            newChannel.disconnect();
+            throw new IOException("File already exists");
+        }
+//        newChannel.disconnect();
     }
 
     private void downloadFolder(Path localPath, String remotePath, String fileName, SecureFileTransferChannel channel) {

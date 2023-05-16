@@ -65,7 +65,7 @@ public class FileInfo {
         return curPath.getParent().toString();
     }
 
-    public static java.lang.String getFileType(String fileName) {
+    public static String getFileType(String fileName) {
         String fileType = "";
         int dotIndex = fileName.lastIndexOf(".");
         if (dotIndex != -1) {
