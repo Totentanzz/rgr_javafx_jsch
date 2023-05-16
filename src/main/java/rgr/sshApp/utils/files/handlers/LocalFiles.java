@@ -1,17 +1,20 @@
-package rgr.sshApp.utils;
+package rgr.sshApp.utils.files.handlers;
 
-import rgr.sshApp.model.ModelData;
-import rgr.sshApp.web.SecureFileTransferChannel;
+import com.jcraft.jsch.JSchException;
+
+import rgr.sshApp.utils.files.FileInfo;
+import rgr.sshApp.web.SecureFtpChannel;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.*;
+import java.nio.file.AccessDeniedException;
+import java.nio.file.FileSystems;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.LinkedList;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-public class LocalFiles extends Files {
+public class LocalFiles extends rgr.sshApp.utils.files.handlers.Files {
 
     public LocalFiles(){
         super();
@@ -39,22 +42,7 @@ public class LocalFiles extends Files {
 
     @Override
     public String getInitialPath() {
-        return Paths.get(".").toAbsolutePath().normalize().toString();
-    }
-
-    @Override
-    public String getParentDirectory(String currentPath) {
-        Path parentPath = Path.of(currentPath).getParent();
-        java.lang.String parentDir = null;
-        if (parentPath!=null) {
-            parentDir = parentPath.toString();
-        }
-        return parentDir;
-    }
-
-    @Override
-    public String getResolvedDirectory(String currentPath, String fileName) {
-        return Path.of(currentPath).resolve(fileName).toString();
+        return System.getProperty("user.home");
     }
 
     @Override
@@ -92,11 +80,11 @@ public class LocalFiles extends Files {
     }
 
     @Override
-    public void transferFile(String remoteTransferPath, String localFileDir, String fileName) {
+    public void transferFile(String remoteTransferPath, String localFileDir, String fileName) throws JSchException {
         Path localFilePath = Path.of(localFileDir).toAbsolutePath().normalize().resolve(fileName);
-        SecureFileTransferChannel newSftpChannel = new SecureFileTransferChannel(this.sshSession.getSession());
+        SecureFtpChannel newSftpChannel = new SecureFtpChannel(this.sshSession.getSession());
         newSftpChannel.connect();
-        System.out.println("New channel is connected = " + newSftpChannel.isConnnected());
+        System.out.println("New channel is connected = " + newSftpChannel.isConnected());
         System.out.println("Uploading file = " + localFilePath);
         System.out.println("Uploading to the dir = " + remoteTransferPath);
         if (java.nio.file.Files.exists(localFilePath)) {
@@ -108,7 +96,7 @@ public class LocalFiles extends Files {
         }
         System.out.println("Upload finished");
         newSftpChannel.disconnect();
-        System.out.println("New channel is disconnected = " + !newSftpChannel.isConnnected());
+        System.out.println("New channel is disconnected = " + !newSftpChannel.isConnected());
     }
 
     @Override
@@ -120,15 +108,8 @@ public class LocalFiles extends Files {
             java.nio.file.Files.move(srcPath, distPath);
         } else if (forceFlag) {
             if (java.nio.file.Files.isDirectory(srcPath)) {
-                java.nio.file.Files.walk(srcPath).filter(file-> !java.nio.file.Files.isDirectory(file)).forEach(file -> {
-                    Path fileDist = distPath.resolve(srcPath.relativize(file));
-                    try {
-                        java.nio.file.Files.move(file, fileDist, StandardCopyOption.REPLACE_EXISTING);
-                    } catch (IOException exc) {
-                        exc.printStackTrace();
-                    }
-                });
-                deleteFile(srcDir,fileName);
+                this.moveFolder(srcPath,distPath);
+                this.deleteFile(srcDir,fileName);
             } else {
                 java.nio.file.Files.move(srcPath, distPath, StandardCopyOption.REPLACE_EXISTING);
             }
@@ -137,19 +118,24 @@ public class LocalFiles extends Files {
             while (isExists(distDir,newFileName)) newFileName = getNextFileName(newFileName);
             Path newSrcPath = srcPath.resolveSibling(newFileName);
             Path newDistPath = distPath.resolveSibling(newFileName);
-            java.nio.file.Files.move(srcPath, newSrcPath);
-            java.nio.file.Files.move(newSrcPath, newDistPath);
+            try {
+                java.nio.file.Files.move(srcPath, newSrcPath);
+                java.nio.file.Files.move(newSrcPath, newDistPath);
+            } catch (AccessDeniedException exc) {
+                System.out.println("ACCESS DENIED TO RENAME OR RELOCATE FILE = " + srcPath);
+            }
         } else {
             throw new IOException("File already exists");
         }
     }
 
-    private void uploadFolder(Path localPath, String remotePath, String fileName, SecureFileTransferChannel channel) {
+    private void uploadFolder(Path localPath, String remotePath, String fileName, SecureFtpChannel channel) {
         try {
             String createdRemoteFolder = remotePath + "/" + fileName;
             channel.makeDir(remotePath,fileName);
             System.out.println("Created dir path: " + createdRemoteFolder);
             LinkedList<Path> files = java.nio.file.Files.list(localPath).collect(Collectors.toCollection(LinkedList::new));
+            System.out.println(files);
             for (Path file : files) {
                 Path localFilePath =  localPath.resolve(file);
                 String localFileName = file.getFileName().toString();
@@ -166,5 +152,22 @@ public class LocalFiles extends Files {
             System.out.println("ManagerController.uploadFolder: recursive method/file listing error");
             exc.printStackTrace();
         }
+    }
+
+    private void moveFolder(Path srcPath, Path distPath) throws IOException {
+        java.nio.file.Files.walk(srcPath).forEach(file -> {
+            try {
+                if (!java.nio.file.Files.isDirectory(file)) {
+                    Path fileDist = distPath.resolve(srcPath.relativize(file));
+                    java.nio.file.Files.move(file, fileDist, StandardCopyOption.REPLACE_EXISTING);
+                    System.out.println("FILE = " + file + " MOVED TO " + fileDist);
+                } else if (!java.nio.file.Files.exists(distPath.resolve(srcPath.relativize(file)))) {
+                    System.out.println("TRYING TO CREATE DIRECTORY OF FOLDER = " + distPath.resolve(srcPath.relativize(file)));
+                    java.nio.file.Files.createDirectory(distPath.resolve(srcPath.relativize(file)));
+                }
+            } catch (IOException exc) {
+                exc.printStackTrace();
+            }
+        });
     }
 }

@@ -1,4 +1,6 @@
-package rgr.sshApp.utils;
+package rgr.sshApp.utils.files;
+
+import com.jcraft.jsch.JSchException;
 
 import java.io.IOException;
 import java.util.LinkedList;
@@ -23,9 +25,9 @@ public interface FilePath {
 
     boolean isDir(String path, String fileName);
 
-    void deleteFile(String path, String fileName);
+    void deleteFile(String path, String fileName) throws JSchException;
 
-    void transferFile(String transferPath, String fileDir, String fileName);
+    void transferFile(String transferPath, String fileDir, String fileName) throws JSchException;
 
     void moveFile(String distDir, String srcDir, String fileName, boolean forceFlag, boolean createNewFlag) throws IOException;
 

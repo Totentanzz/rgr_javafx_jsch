@@ -1,45 +1,42 @@
 package rgr.sshApp.web;
 
-import com.jcraft.jsch.*;
-import rgr.sshApp.utils.LocalFiles;
-import rgr.sshApp.utils.RemoteFiles;
+import com.jcraft.jsch.ChannelSftp;
+import com.jcraft.jsch.JSchException;
+import com.jcraft.jsch.Session;
+import com.jcraft.jsch.SftpException;
+import com.jcraft.jsch.SftpATTRS;
+
+import rgr.sshApp.utils.files.handlers.LocalFiles;
 
 import java.io.IOException;
-import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.util.Vector;
 import java.util.concurrent.TimeUnit;
 
-public class SecureFileTransferChannel {
+public class SecureFtpChannel {
 
-    ChannelSftp sftpChannel;
-    LocalFiles localFiles;
+    private ChannelSftp sftpChannel;
+    private LocalFiles localFiles;
 
-    public SecureFileTransferChannel(Session session) {
+    public SecureFtpChannel(Session session) {
         try {
             this.sftpChannel = (ChannelSftp) session.openChannel("sftp");
             this.sftpChannel.setBulkRequests(32);
             this.localFiles = new LocalFiles();
         } catch (JSchException exc) {
             System.out.println("SFTPC.SecureShellChannel: opening channel error");
-            exc.printStackTrace();
         }
     }
 
-    public void connect() {
-        try {
-            sftpChannel.connect();
-        } catch (JSchException exc) {
-            System.out.println("SFTPC.connect: connecting error");
-            exc.printStackTrace();
-        }
+    public void connect() throws JSchException {
+        sftpChannel.connect();
     }
 
     public void disconnect() {
         if (sftpChannel!=null && sftpChannel.isConnected()) sftpChannel.disconnect();
     }
 
-    public boolean isConnnected() {
+    public boolean isConnected() {
         boolean state = false;
         if (sftpChannel!=null) {
             state = sftpChannel.isConnected();
@@ -55,6 +52,8 @@ public class SecureFileTransferChannel {
             if (!isExists(remoteDir,fileName) || isRemoteFileNewer(remoteFilePath,localDir,fileName)<0) {
                 sftpChannel.put(localFilePath, remoteDir);
                 System.out.println("UPLOADING FILE = " + fileName + " HAS FINISHED");
+            } else {
+                System.out.println("FIle already exists or has newer");
             }
         } catch (SftpException exc) {
             System.out.println("SFTPC.uploadFile: uploading file error");
@@ -176,7 +175,7 @@ public class SecureFileTransferChannel {
         return isDir;
     }
 
-    public byte isRemoteFileNewer(String remoteFilePath, String localDir, String fileName) {
+    public long isRemoteFileNewer(String remoteFilePath, String localDir, String fileName) {
         SftpATTRS attrs = null;
         String remoteParentDir = getParent(remoteFilePath);
         Path localFilePath = Path.of(localDir).toAbsolutePath().normalize().resolve(fileName);
@@ -189,16 +188,17 @@ public class SecureFileTransferChannel {
         } catch (IOException exc) {
             System.out.println("SecureShell.isRemoteFileNewer: can't get LastModifiedTime");
         }
-        byte state = (byte)(remoteMTime - localMTime);
+        long state = remoteMTime - localMTime;
         System.out.println("REMOTE FILE = " + fileName + " IS NEWER = " + state);
         return state;
     }
 
     private String getParent(String remoteFilePath) {
-        int lastSlashIndex = remoteFilePath.lastIndexOf("/");
+        char separatorChar = remoteFilePath.contains("/") ? '/' : '\\';
+        int lastSlashIndex = remoteFilePath.lastIndexOf(separatorChar);
         String parentDir = null;
-        if (lastSlashIndex==0 && !remoteFilePath.equals("/")) {
-            parentDir = "/";
+        if (lastSlashIndex==0 && !remoteFilePath.equals(String.valueOf(separatorChar))) {
+            parentDir = String.valueOf(separatorChar);
         }
         else if (lastSlashIndex!=0) {
             parentDir = remoteFilePath.substring(0,lastSlashIndex);

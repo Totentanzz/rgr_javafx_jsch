@@ -1,9 +1,17 @@
 package rgr.sshApp.web;
 
-import com.jcraft.jsch.*;
+import com.jcraft.jsch.ChannelExec;
+import com.jcraft.jsch.JSch;
+import com.jcraft.jsch.JSchException;
+import com.jcraft.jsch.Session;
+
 import lombok.Data;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.Properties;
 
 @Data
@@ -16,8 +24,8 @@ public class SecureShellSession {
     private final static String sessionConfigFile = "src/main/resources/rgr/sshApp/configs/sessionConfig.properties";
 
     private Session session;
-    private SecureFileTransferChannel checkingChannel;
-    private SecureFileTransferChannel gettingFileListChannel;
+    private SecureFtpChannel checkingChannel;
+    private SecureFtpChannel fileListChannel;
 
     public boolean isEstablished() {
         return session.isConnected();
@@ -26,15 +34,18 @@ public class SecureShellSession {
     public void connect() throws JSchException {
         session = getNewSession();
         session.connect();
-        checkingChannel = new SecureFileTransferChannel(session);
+        checkingChannel = new SecureFtpChannel(session);
         checkingChannel.connect();
-        gettingFileListChannel = new SecureFileTransferChannel(session);
-        gettingFileListChannel.connect();
+        fileListChannel = new SecureFtpChannel(session);
+        fileListChannel.connect();
+        System.out.println("Session isCon: " + session.isConnected());
+        System.out.println("CheckChan isCon: " + checkingChannel.isConnected());
+        System.out.println("GetChan isCon: " + fileListChannel.isConnected());
     }
 
     public void disconnect() {
         checkingChannel.disconnect();
-        gettingFileListChannel.disconnect();
+        fileListChannel.disconnect();
         if (isEstablished()) session.disconnect();
     }
 

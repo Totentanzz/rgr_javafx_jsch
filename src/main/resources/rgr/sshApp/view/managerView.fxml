@@ -6,34 +6,31 @@
 <?import javafx.scene.image.*?>
 <?import javafx.scene.layout.*?>
 <?import javafx.stage.*?>
-<?import rgr.sshApp.utils.*?>
 
-<Stage title="SSH File Manager" fx:id="managerStage" onCloseRequest="#handleCloseRequest"  onShown="#initPanels" xmlns="http://javafx.com/javafx/11.0.14-internal" xmlns:fx="http://javafx.com/fxml/1" fx:controller="rgr.sshApp.controller.ManagerController">
+<?import rgr.sshApp.utils.files.panels.LocalPanel?>
+<?import rgr.sshApp.utils.files.panels.RemotePanel?>
+
+<Stage title="SSH File Manager" fx:id="managerStage" onCloseRequest="#handleCloseRequest" onShown="#initPanels" xmlns="http://javafx.com/javafx/11.0.14-internal" xmlns:fx="http://javafx.com/fxml/1" fx:controller="rgr.sshApp.controller.ManagerController">
     <icons>
         <Image url="@../images/files-and-folders.png"/>
     </icons>
    <scene>
       <Scene fx:id="managerScene">
          <root>
-            <VBox fx:id="managerBox" prefHeight="718.0" prefWidth="845.0">
+            <VBox fx:id="managerBox" prefHeight="800.0" prefWidth="1080.0">
                <children>
                   <MenuBar fx:id="managerMenuBar">
                     <menus>
-                      <Menu mnemonicParsing="false" text="File">
+                      <Menu mnemonicParsing="false" text="App">
                         <items>
-                          <MenuItem mnemonicParsing="false" text="Close" />
+                          <MenuItem mnemonicParsing="false" text="To login screen" onAction="#exitToLogin"/>
+                            <MenuItem mnemonicParsing="false" text="Close" onAction="#closeWindow"/>
                         </items>
                       </Menu>
-                      <Menu mnemonicParsing="false" text="Edit">
-                        <items>
-                          <MenuItem mnemonicParsing="false" text="Delete" />
-                        </items>
-                      </Menu>
-                      <Menu mnemonicParsing="false" text="Help">
-                        <items>
-                          <MenuItem mnemonicParsing="false" text="About" />
-                        </items>
-                      </Menu>
+                        <Menu mnemonicParsing="false" text="Connection">
+                            <MenuItem fx:id="reconnectButton" mnemonicParsing="false" text="Reconnect" onAction="#reconnectSsh"/>
+                            <MenuItem fx:id="disconnectButton" mnemonicParsing="false" text="Disconnect" onAction="#disconnectSsh"/>
+                        </Menu>
                     </menus>
                   </MenuBar>
                   <HBox prefHeight="28.0" prefWidth="845.0">
@@ -74,7 +71,6 @@
                      <children>
                         <Button fx:id="uploadButton" focusTraversable="false" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#uploadLocalFile" text="Upload" HBox.hgrow="ALWAYS" />
                         <Button fx:id="downloadButton" focusTraversable="false" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#downloadRemoteFile" text="Download" HBox.hgrow="ALWAYS" />
-                        <Button fx:id="moveButton" focusTraversable="false" maxWidth="1.7976931348623157E308" mnemonicParsing="false" text="Move" HBox.hgrow="ALWAYS" />
                         <Button fx:id="exitButton" focusTraversable="false" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#closeWindow" text="Exit" HBox.hgrow="ALWAYS" />
                      </children>
                      <padding>

@@ -1,7 +1,11 @@
-package rgr.sshApp.utils;
+package rgr.sshApp.utils.files;
 
 import com.jcraft.jsch.ChannelSftp;
-import lombok.*;
+
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
+
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -18,7 +22,7 @@ public class FileInfo {
     private long fileSize;
     private String lastModifiedDate;
 
-    public FileInfo(String fileName, String fileType, long fileSize, String lastModifiedDate) {
+    private FileInfo(String fileName, String fileType, long fileSize, String lastModifiedDate) {
         this.fileName = fileName;
         this.fileType = fileType;
         this.fileSize = fileSize;

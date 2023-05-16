@@ -1,26 +1,25 @@
 package rgr.sshApp.controller;
 
 import com.jcraft.jsch.JSchException;
+
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
-import javafx.scene.image.Image;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
+import javafx.stage.StageStyle;
+
 import rgr.sshApp.SshApp;
 import rgr.sshApp.model.ModelData;
 import rgr.sshApp.utils.CustomAlert;
 import rgr.sshApp.web.SecureShellSession;
 
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.URL;
-import java.nio.file.LinkOption;
-import java.nio.file.Path;
 import java.util.ResourceBundle;
 
 public class LoginController implements Initializable {
@@ -51,17 +50,19 @@ public class LoginController implements Initializable {
     private ModelData modelData;
     private double xOffset, yOffset;
 
-
+    @FXML
     public void dragWindow(MouseEvent mouseEvent) {
         loginStage.setX(mouseEvent.getScreenX() - xOffset);
         loginStage.setY(mouseEvent.getScreenY() - yOffset);
     }
 
+    @FXML
     public void grabWindow(MouseEvent mouseEvent) {
         xOffset = mouseEvent.getSceneX();
         yOffset = mouseEvent.getSceneY();
     }
 
+    @FXML
     public void showPassword(ActionEvent actionEvent) {
         if (passStack.getChildren().indexOf(hidePassField)==passStack.getChildren().size()-1) {
             showPassField.toFront();
@@ -74,10 +75,12 @@ public class LoginController implements Initializable {
         }
     }
 
+    @FXML
     public void closeWindow(ActionEvent actionEvent) {
         loginStage.close();
     }
 
+    @FXML
     public void tryConnect(ActionEvent actionEvent) {
         String username = usernameField.getText();
         String password = hidePassField.getText();
@@ -88,28 +91,27 @@ public class LoginController implements Initializable {
             sshSession = new SecureShellSession(username,password,ip,port);
             sshSession.connect();
         } catch (JSchException | NumberFormatException exc) {
-            System.out.println("LoginController.tryConnect: connection/parsing error");
-            CustomAlert errorAlert = new CustomAlert("Invalid connection params","Error",ButtonType.OK);
+            String message = "Invalid connection params";
+            CustomAlert errorAlert = new CustomAlert(message,"Error",ButtonType.OK);
             errorAlert.initOwner(loginStage);
             errorAlert.showAndWait();
         } finally {
             if (sshSession.isEstablished()) {
-                System.out.println("CONNECTED SUCCESSFULLY");
                 modelData.setSshSession(sshSession);
-                //убрать стоку ниже одну
-                sshSession.getCheckingChannel().changeDirectory("/workspace/firstContainer/");
-                FXMLLoader fxmlLoader = new FXMLLoader(SshApp.class.getResource("view/managerView.fxml"));
-                Stage stage = null;
-                try {
-                    stage = fxmlLoader.load();
-                    stage.getIcons().add(new Image(new FileInputStream("src/main/resources/rgr/sshApp/images/files-and-folders.png")));
-                    loginStage.close();
-                    stage.show();
-                } catch (IOException exc) {
-                    System.out.println("LoginController.tryConnect: loading fxml error");
-                    exc.printStackTrace();
-                }
+                loginStage.close();
+                ManagerController.loadNewWindow();
             }
+        }
+    }
+
+    public static void loadNewWindow() {
+        FXMLLoader fxmlLoader = new FXMLLoader(SshApp.class.getResource("view/loginView.fxml"));
+        try {
+            Stage loginStage = fxmlLoader.load();
+            loginStage.initStyle(StageStyle.UNDECORATED);
+            loginStage.show();
+        } catch (IOException exc) {
+            throw new RuntimeException(exc);
         }
     }
 
@@ -118,14 +120,6 @@ public class LoginController implements Initializable {
         initTextFields();
         setDefaultText();
         modelData = ModelData.getInstance();
-        String ab1 = "C:\\Users\\Ilya\\IdeaProjects\\rgr_javafx_jsch\\src\\main\\resources\\rgr\\sshApp\\images\\arrow.png";
-        String ab2 = "C:\\Users\\Ilya\\IdeaProjects\\rgr_javafx_jsch\\arrow.png";
-        Path path1 = Path.of(ab1).toAbsolutePath().normalize();
-        Path path2 = Path.of(ab2).toAbsolutePath().normalize();
-        boolean as1 = java.nio.file.Files.exists(path1);
-        boolean as2 = java.nio.file.Files.exists(path2);
-        System.out.println(as1);
-        System.out.println(as2);
     }
 
     private void initTextFields() {
@@ -137,6 +131,7 @@ public class LoginController implements Initializable {
                 return null;
             }
         }));
+
         ipField.setTextFormatter(new TextFormatter<>(change -> {
             String newText = change.getControlNewText();
             String octetPattern = "(2[0-4]\\d|25[0-5]|[01]?\\d\\d?)";
@@ -148,6 +143,7 @@ public class LoginController implements Initializable {
                 return null;
             }
         }));
+
         portField.setTextFormatter(new TextFormatter<>(change -> {
             String newText = change.getControlNewText();
             String regex = "\\d{0,5}";
@@ -157,14 +153,15 @@ public class LoginController implements Initializable {
                 return null;
             }
         }));
+
         hidePassField.textProperty().bindBidirectional(showPassField.textProperty());
         hidePassField.toFront();
     }
 
     private void setDefaultText() {
         ipField.setText("3.74.216.87");
-        portField.setText("51323");
+        portField.setText("58716");
         usernameField.setText("root");
-        hidePassField.setText("o8cZhtwH2tDUaBLf0uQ7");
+        hidePassField.setText("VaBPAGi4kaufDblCV");
     }
 }

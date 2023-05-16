@@ -1,6 +1,7 @@
 package rgr.sshApp.model;
 
 import lombok.Data;
+
 import rgr.sshApp.web.SecureShellSession;
 
 @Data

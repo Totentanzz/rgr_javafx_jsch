@@ -5,11 +5,12 @@ module rgr.server.rgr_javafx_jsch {
     requires jsch;
     requires lombok;
 
-
-
-    //exports rgr.sshApp;
-    opens rgr.sshApp.controller to javafx.fxml;
     opens rgr.sshApp to javafx.graphics;
-    exports rgr.sshApp.utils;
-    opens rgr.sshApp.utils to javafx.fxml;
+    exports rgr.sshApp.web;
+    exports rgr.sshApp.controller;
+    opens rgr.sshApp.controller to javafx.fxml;
+    exports rgr.sshApp.utils.files.panels;
+    opens rgr.sshApp.utils.files.panels to javafx.fxml;
+    exports rgr.sshApp.utils.files;
+    opens rgr.sshApp.utils.files to javafx.base;
 }

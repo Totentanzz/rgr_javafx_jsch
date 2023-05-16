@@ -1,35 +1,39 @@
-package rgr.sshApp.utils;
+package rgr.sshApp.utils.files.handlers;
 
 import com.jcraft.jsch.ChannelSftp;
+import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.SftpATTRS;
-import rgr.sshApp.model.ModelData;
-import rgr.sshApp.web.SecureFileTransferChannel;
-import rgr.sshApp.web.SecureShellSession;
+
+import rgr.sshApp.utils.files.FileInfo;
+import rgr.sshApp.web.SecureFtpChannel;
 
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.LinkedList;
 import java.util.Vector;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 public class RemoteFiles extends Files {
 
-    private SecureFileTransferChannel gettingFileListChannel;
-    private SecureFileTransferChannel chekingChannel;
+    private SecureFtpChannel gettingFileListChannel;
+    private SecureFtpChannel chekingChannel;
 
     public RemoteFiles() {
         super();
-        this.gettingFileListChannel = this.sshSession.getGettingFileListChannel();
+        this.gettingFileListChannel = this.sshSession.getFileListChannel();
         this.chekingChannel = this.sshSession.getCheckingChannel();
+    }
+
+    public void setChannels(SecureFtpChannel checkChannel, SecureFtpChannel fileListChannel) {
+        this.gettingFileListChannel = fileListChannel;
+        this.chekingChannel = checkChannel;
     }
 
     @Override
     public LinkedList<FileInfo> getFileList(String path) throws IOException {
-        Vector<ChannelSftp.LsEntry> fileList = null;
         LinkedList<FileInfo> fileInfos = null;
-        if (gettingFileListChannel !=null) {
-            fileList = gettingFileListChannel.listDirectory(path);
+        Vector<ChannelSftp.LsEntry> fileList = gettingFileListChannel.listDirectory(path);
+        if (fileList !=null) {
             fileInfos = fileList.stream().filter(file-> !file.getFilename().equals("."))
                     .map(FileInfo::parseFilePath).collect(Collectors.toCollection(LinkedList::new));
         }
@@ -50,31 +54,6 @@ public class RemoteFiles extends Files {
     }
 
     @Override
-    public String getParentDirectory(String path) {
-        int lastSlashIndex = path.lastIndexOf("/");
-        String parentDir = null;
-        if (lastSlashIndex==0 && !path.equals("/")) {
-            parentDir = "/";
-        }
-        else if (lastSlashIndex!=0) {
-            parentDir = path.substring(0,lastSlashIndex);
-        }
-        return parentDir;
-    }
-
-    @Override
-    public String getResolvedDirectory(String currentPath, String fileName) {
-        String resolvedDir = null;
-        if (currentPath.equals("/")) {
-            resolvedDir = currentPath + fileName;
-        }
-        else {
-            resolvedDir = currentPath + "/" + fileName;
-        }
-        return resolvedDir;
-    }
-
-    @Override
     public boolean isExists(String path, String fileName) {
         return chekingChannel.isExists(path,fileName);
     }
@@ -85,8 +64,8 @@ public class RemoteFiles extends Files {
     }
 
     @Override
-    public void deleteFile(String path, String fileName) {
-        SecureFileTransferChannel newChannel = new SecureFileTransferChannel(sshSession.getSession());
+    public void deleteFile(String path, String fileName) throws JSchException {
+        SecureFtpChannel newChannel = new SecureFtpChannel(sshSession.getSession());
         newChannel.connect();
         String filePath = this.getResolvedDirectory(path, fileName);
         if (newChannel.isExists(path,fileName)) {
@@ -102,12 +81,12 @@ public class RemoteFiles extends Files {
     }
 
     @Override
-    public void transferFile(String localTransferPath, String remoteFileDir, String fileName) {
+    public void transferFile(String localTransferPath, String remoteFileDir, String fileName) throws JSchException {
         String remoteFilePath = remoteFileDir + "/" + fileName;
         Path transferPath = Path.of(localTransferPath).toAbsolutePath().normalize();
-        SecureFileTransferChannel newSftpChannel = new SecureFileTransferChannel(sshSession.getSession());
+        SecureFtpChannel newSftpChannel = new SecureFtpChannel(sshSession.getSession());
         newSftpChannel.connect();
-        System.out.println("New channel is connected = " + newSftpChannel.isConnnected());
+        System.out.println("New channel is connected = " + newSftpChannel.isConnected());
         System.out.println("Downloading file = " + remoteFilePath);
         System.out.println("Downloading to the dir = " + transferPath);
         newSftpChannel.changeDirectory(remoteFileDir);
@@ -122,17 +101,13 @@ public class RemoteFiles extends Files {
         }
         System.out.println("Downloading finished");
         newSftpChannel.disconnect();
-        System.out.println("New channel is disconnected = " + !newSftpChannel.isConnnected());
+        System.out.println("New channel is disconnected = " + !newSftpChannel.isConnected());
     }
 
     @Override
     public void moveFile(String distDir, String srcDir, String fileName, boolean forceFlag, boolean createNewFlag) throws IOException {
         String srcFilePath = srcDir + "/" + fileName;
         String distFilePath = distDir + "/" + fileName;
-//        SecureFileTransferChannel newChannel = new SecureFileTransferChannel(sshSession.getSession());
-//        newChannel.connect();
-//        newChannel.changeDirectory(distDir);
-//        SftpATTRS attrs = newChannel.getAttrs(fileName);
         String moveCommand = new StringBuilder()
                          .append("mv ")
                          .append(srcFilePath)
@@ -171,13 +146,11 @@ public class RemoteFiles extends Files {
             String response = sshSession.executeCommand(renameCommand + ";" + moveCommand);
             System.out.println(response);
         } else {
-//            newChannel.disconnect();
             throw new IOException("File already exists");
         }
-//        newChannel.disconnect();
     }
 
-    private void downloadFolder(Path localPath, String remotePath, String fileName, SecureFileTransferChannel channel) {
+    private void downloadFolder(Path localPath, String remotePath, String fileName, SecureFtpChannel channel) {
         System.out.println("curLocalPath: " + localPath);
         System.out.println("creating localPath: " + remotePath);
         Path createdLocalFolder = localPath.resolve(Path.of(fileName));

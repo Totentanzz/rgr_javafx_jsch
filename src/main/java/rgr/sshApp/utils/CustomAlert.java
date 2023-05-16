@@ -7,11 +7,10 @@ import javafx.scene.image.Image;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
-import javafx.stage.Window;
-import rgr.sshApp.SshApp;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
+import rgr.sshApp.SshApp;
+import rgr.sshApp.utils.files.panels.FilePanel;
+
 import java.util.Objects;
 
 public class CustomAlert extends Alert {

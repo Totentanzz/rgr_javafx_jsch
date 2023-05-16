@@ -1,4 +1,6 @@
-package rgr.sshApp.utils;
+package rgr.sshApp.utils.files.panels;
+
+import com.jcraft.jsch.JSchException;
 
 import javafx.application.Platform;
 import javafx.concurrent.Task;
@@ -11,7 +13,11 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
 import javafx.stage.Window;
+
 import rgr.sshApp.SshApp;
+import rgr.sshApp.utils.CustomAlert;
+import rgr.sshApp.utils.files.FileInfo;
+import rgr.sshApp.utils.files.handlers.Files;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -21,9 +27,8 @@ import java.util.Optional;
 import java.util.ResourceBundle;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.atomic.AtomicReference;
 
-public abstract class FilePanel extends VBox implements Initializable, FilePath {
+public abstract class FilePanel extends VBox implements Initializable {
 
     @FXML
     private ComboBox<java.lang.String> diskComboBox;
@@ -39,6 +44,8 @@ public abstract class FilePanel extends VBox implements Initializable, FilePath 
     private TableView<FileInfo> fileTable;
     @FXML
     private VBox panelBox;
+
+    protected Files fileHandler;
 
     public FilePanel() {
         super();
@@ -61,7 +68,7 @@ public abstract class FilePanel extends VBox implements Initializable, FilePath 
     @FXML
     public void moveToParentDir(ActionEvent actionEvent) {
         String curDir = pathField.getText();
-        String parentDir = getParentDirectory(curDir);
+        String parentDir = fileHandler.getParentDirectory(curDir);
         if (parentDir!=null) {
             updateTable(parentDir);
         }
@@ -76,7 +83,7 @@ public abstract class FilePanel extends VBox implements Initializable, FilePath 
                 backButton.fire();
             }
             else if (selectedFile != null && selectedFile.getFileSize() == -1) {
-               String newDir = getResolvedDirectory(currentPath, selectedFile.getFileName());
+               String newDir = fileHandler.getResolvedDirectory(currentPath, selectedFile.getFileName());
                System.out.println(newDir);
                updateTable(newDir);
             }
@@ -97,36 +104,46 @@ public abstract class FilePanel extends VBox implements Initializable, FilePath 
 
     public void updateTable(String path) {
         String curPath = pathField.getText();
+        String message = null;
+        CustomAlert errorAlert = null;
         try {
             pathField.setText(path);
             fileTable.getItems().clear();
-            fileTable.getItems().addAll(getFileList(path));
+            fileTable.getItems().addAll(fileHandler.getFileList(path));
             fileTable.sort();
+        } catch (NullPointerException exc) {
+            message = "Getting list of files error. Please, make sure to be connected by SSH";
         } catch (IOException exc) {
             updateTable(curPath);
             System.out.println("ManagerController.updateTable: getting list of files error");
-            CustomAlert errorAlert = new CustomAlert("Entering to the folder error. Please, make sure" +
-                    " to not enter the private system folder",
-                    "File manager error",ButtonType.OK);
-            errorAlert.initOwner(Window.getWindows().get(Window.getWindows().size()-1));
-            errorAlert.showAndWait();
-        }
-    }
-
-    public void transfer(String transferPath) {
-        startInNewThread(() -> {
-            FileInfo selectedFile = getSelectedFile();
-            if (selectedFile != null) {
-                String selectedFileName = selectedFile.getFileName();
-                String currentDir = getCurrentDir();
-                transferFile(transferPath, currentDir, selectedFileName);
-                Platform.runLater(() -> notifyFinishingAction("File " + selectedFileName + " was successfully transferred"));
+            message = "Entering to the folder error. Please, make sure " +
+                      "not entering to the private system folder";
+        } finally {
+            if (message!=null) {
+                errorAlert = new CustomAlert(message,"Error",ButtonType.OK);
+                errorAlert.initOwner(Window.getWindows().get(Window.getWindows().size()-1));
+                errorAlert.showAndWait();
             }
-        });
+        }
     }
 
     public void refresh() {
         updateTable(pathField.getText());
+    }
+
+    public void transfer(String transferPath) {
+        FileInfo selectedFile = getSelectedFile();
+        if (selectedFile != null && !selectedFile.getFileName().equals("..")) {
+            String selectedFileName = selectedFile.getFileName();
+            String currentDir = getCurrentDir();
+            try {
+                fileHandler.transferFile(transferPath, currentDir, selectedFileName);
+                String message = "File " + selectedFileName + " was successfully transferred";
+                Platform.runLater(() -> notifyAboutEvent(message));
+            } catch (JSchException exc) {
+                Platform.runLater(this::notifyConnectionError);
+            }
+        }
     }
 
     @Override
@@ -136,12 +153,12 @@ public abstract class FilePanel extends VBox implements Initializable, FilePath 
     }
 
     protected void initComboBox() {
-        LinkedList<String> rootDirs = getRootDirectories();
+        LinkedList<String> rootDirs = fileHandler.getRootDirectories();
         diskComboBox.getItems().addAll(rootDirs);
         diskComboBox.getSelectionModel().select(0);
     }
 
-    protected void initTable() {
+    private void initTable() {
         TableColumn<FileInfo, String> fileNameColumn = new TableColumn<>("Name");
         fileNameColumn.setCellValueFactory(new PropertyValueFactory<>("fileName"));
 
@@ -169,21 +186,28 @@ public abstract class FilePanel extends VBox implements Initializable, FilePath 
         fileTable.getColumns().addAll(fileNameColumn,fileTypeColumn,fileSizeColumn,fileDateColumn);
         fileTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
         fileTable.getSortOrder().add(fileNameColumn);
+
     }
 
-    protected void initTableContextMenu() {
+    private void initTableContextMenu() {
         MenuItem removeOption = new MenuItem("Remove file");
         MenuItem moveOption = new MenuItem("Move file");
+
         removeOption.setOnAction(action -> {
             startInNewThread(()->{
                 FileInfo localFileInfo = fileTable.getSelectionModel().getSelectedItem();
                 if (localFileInfo!=null) {
                     String curDir = pathField.getText();
                     String fileName = localFileInfo.getFileName();
-                    deleteFile(curDir,fileName);
+                    try {
+                        fileHandler.deleteFile(curDir,fileName);
+                    } catch (JSchException exc) {
+                        Platform.runLater(this::notifyConnectionError);
+                    }
                 }
             });
         });
+
         moveOption.setOnAction(action -> {
             FileInfo localFileInfo = fileTable.getSelectionModel().getSelectedItem();
             if (localFileInfo != null) {
@@ -196,6 +220,7 @@ public abstract class FilePanel extends VBox implements Initializable, FilePath 
                 }
             }
         });
+
         fileTable.setContextMenu(new ContextMenu(removeOption, moveOption));
     }
 
@@ -216,20 +241,18 @@ public abstract class FilePanel extends VBox implements Initializable, FilePath 
 
     private void tryToMoveFile(String distDir,String srcDir,String fileName,boolean forceFlag,boolean createNewFlag) {
         try {
-            moveFile(distDir, srcDir, fileName, forceFlag, createNewFlag);
+            fileHandler.moveFile(distDir, srcDir, fileName, forceFlag, createNewFlag);
         } catch (IOException exc) {
             CompletableFuture<Optional<ButtonType>> result = new CompletableFuture<>();
             Platform.runLater(()-> result.complete(notifyAlreadyExistingFile()));
             try {
                 Optional<ButtonType> notificationRes = result.get();
-                System.out.println(notificationRes);
-                System.out.println(notificationRes.get());
                 if (notificationRes.isPresent() && notificationRes.get().getText().equals("Replace")) {
                     forceFlag = true;
-                    moveFile(distDir,srcDir,fileName, forceFlag,createNewFlag);
+                    fileHandler.moveFile(distDir,srcDir,fileName, forceFlag,createNewFlag);
                 } else {
                     createNewFlag = true;
-                    moveFile(distDir,srcDir,fileName,forceFlag,createNewFlag);
+                    fileHandler.moveFile(distDir,srcDir,fileName,forceFlag,createNewFlag);
                 }
             } catch (IOException | ExecutionException | InterruptedException exc1) {
                 exc1.printStackTrace();
@@ -253,20 +276,26 @@ public abstract class FilePanel extends VBox implements Initializable, FilePath 
         return chosenDir;
     }
 
-    private void notifyFinishingAction(String message) {
+    private void notifyAboutEvent(String message) {
         CustomAlert notifyAlert = new CustomAlert(message,
                 "Notification", ButtonType.OK);
         notifyAlert.showAndWait();
     }
 
+    private void notifyConnectionError() {
+        String message = ("Connection error. Please, don't spam buttons and wait for some time. " +
+                          "If this message repeats, restart the app.");
+        CustomAlert notifyAlert = new CustomAlert(message,
+                "Connection error", ButtonType.OK);
+    }
+
     private Optional<ButtonType> notifyAlreadyExistingFile() {
         ButtonType replaceButton = new ButtonType("Replace");
         ButtonType skipButton = new ButtonType("Skip");
-        CustomAlert fileExistsAlert = new CustomAlert("File already exists. Do you want to replace it?",
-                "Error", replaceButton,skipButton);
+        String message = "File already exists. Do you want to replace it?";
+        CustomAlert fileExistsAlert = new CustomAlert(message, "File exists", replaceButton,skipButton);
         fileExistsAlert.initOwner(Window.getWindows().get(Window.getWindows().size()-1));
-        Optional<ButtonType> result = fileExistsAlert.showAndWait();
-        return result;
+        return fileExistsAlert.showAndWait();
     }
 
 }
