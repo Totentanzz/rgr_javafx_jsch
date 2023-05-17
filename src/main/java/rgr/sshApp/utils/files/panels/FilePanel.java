@@ -2,7 +2,9 @@ package rgr.sshApp.utils.files.panels;
 
 import com.jcraft.jsch.JSchException;
 
+import com.jcraft.jsch.SftpException;
 import javafx.application.Platform;
+import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -12,16 +14,21 @@ import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
+import javafx.stage.Stage;
 import javafx.stage.Window;
 
 import rgr.sshApp.SshApp;
+import rgr.sshApp.model.ModelData;
 import rgr.sshApp.utils.CustomAlert;
 import rgr.sshApp.utils.files.FileInfo;
 import rgr.sshApp.utils.files.handlers.Files;
+import rgr.sshApp.web.SecureShellSession;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
+import java.nio.file.FileAlreadyExistsException;
 import java.util.LinkedList;
 import java.util.Optional;
 import java.util.ResourceBundle;
@@ -78,13 +85,11 @@ public abstract class FilePanel extends VBox implements Initializable {
         if (mouseEvent.getClickCount()==2) {
             FileInfo selectedFile = fileTable.getSelectionModel().getSelectedItem();
             String currentPath = pathField.getText();
-            System.out.println("Selected Item: " + selectedFile);
             if (selectedFile != null && selectedFile.getFileName().equals("..")) {
                 backButton.fire();
             }
             else if (selectedFile != null && selectedFile.getFileSize() == -1) {
                String newDir = fileHandler.getResolvedDirectory(currentPath, selectedFile.getFileName());
-               System.out.println(newDir);
                updateTable(newDir);
             }
         }
@@ -112,16 +117,17 @@ public abstract class FilePanel extends VBox implements Initializable {
             fileTable.getItems().addAll(fileHandler.getFileList(path));
             fileTable.sort();
         } catch (NullPointerException exc) {
-            message = "Getting list of files error. Please, make sure to be connected by SSH";
+            message = "Getting list of files/connection error. Please, make sure that selected " +
+                    "folder is existing and you are connected by SSH";
         } catch (IOException exc) {
             updateTable(curPath);
-            System.out.println("ManagerController.updateTable: getting list of files error");
-            message = "Entering to the folder error. Please, make sure " +
-                      "not entering to the private system folder";
+            message = "Entering to the folder error. Please, make sure that selected folder " +
+                      "is existing and you are not entering to the private system folder";
         } finally {
             if (message!=null) {
+                ObservableList<Window> windowList = Window.getWindows().filtered(window-> window instanceof Stage);
                 errorAlert = new CustomAlert(message,"Error",ButtonType.OK);
-                errorAlert.initOwner(Window.getWindows().get(Window.getWindows().size()-1));
+                errorAlert.initOwner(windowList.get(0));
                 errorAlert.showAndWait();
             }
         }
@@ -140,10 +146,23 @@ public abstract class FilePanel extends VBox implements Initializable {
                 fileHandler.transferFile(transferPath, currentDir, selectedFileName);
                 String message = "File " + selectedFileName + " was successfully transferred";
                 Platform.runLater(() -> notifyAboutEvent(message));
-            } catch (JSchException exc) {
-                Platform.runLater(this::notifyConnectionError);
+            } catch (JSchException | SftpException exc) {
+                Platform.runLater(FilePanel::notifyConnectionError);
+            } catch (FileNotFoundException exc) {
+                Platform.runLater(this::notifyAboutFile);
             }
         }
+    }
+
+    public static void notifyConnectionError() {
+        String message = "Connection error. Please, don't spam buttons and wait for some time. " +
+                         "If this message repeats, try to reconnect by SSH and make sure your " +
+                         "server is ready for SSH connections.";
+        CustomAlert notifyAlert = new CustomAlert(message,
+                "Connection error", ButtonType.OK);
+        ObservableList<Window> windowList = Window.getWindows().filtered(window-> window instanceof Stage);
+        notifyAlert.initOwner(windowList.get(0));
+        notifyAlert.showAndWait();
     }
 
     @Override
@@ -194,18 +213,25 @@ public abstract class FilePanel extends VBox implements Initializable {
         MenuItem moveOption = new MenuItem("Move file");
 
         removeOption.setOnAction(action -> {
-            startInNewThread(()->{
-                FileInfo localFileInfo = fileTable.getSelectionModel().getSelectedItem();
-                if (localFileInfo!=null) {
-                    String curDir = pathField.getText();
-                    String fileName = localFileInfo.getFileName();
-                    try {
-                        fileHandler.deleteFile(curDir,fileName);
-                    } catch (JSchException exc) {
-                        Platform.runLater(this::notifyConnectionError);
-                    }
+            FileInfo localFileInfo = fileTable.getSelectionModel().getSelectedItem();
+            if (localFileInfo!=null) {
+                String curDir = pathField.getText();
+                String fileName = localFileInfo.getFileName();
+                SecureShellSession sshSession = ModelData.getInstance().getSshSession();
+                if ((this instanceof RemotePanel && sshSession.isEstablished()) || (this instanceof LocalPanel)) {
+                    startInNewThread(() -> {
+                        try {
+                            fileHandler.deleteFile(curDir, fileName);
+                        } catch (JSchException | SftpException exc) {
+                            Platform.runLater(FilePanel::notifyConnectionError);
+                        } catch (FileNotFoundException exc) {
+                            Platform.runLater(this::notifyAboutFile);
+                        }
+                    });
+                } else {
+                    notifyConnectionError();
                 }
-            });
+            }
         });
 
         moveOption.setOnAction(action -> {
@@ -242,7 +268,9 @@ public abstract class FilePanel extends VBox implements Initializable {
     private void tryToMoveFile(String distDir,String srcDir,String fileName,boolean forceFlag,boolean createNewFlag) {
         try {
             fileHandler.moveFile(distDir, srcDir, fileName, forceFlag, createNewFlag);
-        } catch (IOException exc) {
+        } catch (FileNotFoundException exc) {
+            Platform.runLater(this::notifyAboutFile);
+        } catch (FileAlreadyExistsException exc) {
             CompletableFuture<Optional<ButtonType>> result = new CompletableFuture<>();
             Platform.runLater(()-> result.complete(notifyAlreadyExistingFile()));
             try {
@@ -257,6 +285,8 @@ public abstract class FilePanel extends VBox implements Initializable {
             } catch (IOException | ExecutionException | InterruptedException exc1) {
                 exc1.printStackTrace();
             }
+        } catch (IOException exc) {
+            exc.printStackTrace();
         }
     }
 
@@ -266,7 +296,10 @@ public abstract class FilePanel extends VBox implements Initializable {
             FilePanel newFilePanel = getClass().getDeclaredConstructor().newInstance();
             newFilePanel.getFileTable().getContextMenu().getItems().removeIf(item->item.getText().equals("Move file"));
             CustomAlert directoryChooser = new CustomAlert(newFilePanel);
-            Optional<ButtonType> result = directoryChooser.showAndWait();
+            SecureShellSession sshSession = ModelData.getInstance().getSshSession();
+            Optional<ButtonType> result = Optional.empty();
+            if ((newFilePanel instanceof RemotePanel && sshSession.isEstablished()) || (newFilePanel instanceof LocalPanel))
+                result = directoryChooser.showAndWait();
             if (result.isPresent() && result.get()==ButtonType.APPLY){
                 chosenDir = newFilePanel.getCurrentDir();
             }
@@ -282,11 +315,10 @@ public abstract class FilePanel extends VBox implements Initializable {
         notifyAlert.showAndWait();
     }
 
-    private void notifyConnectionError() {
-        String message = ("Connection error. Please, don't spam buttons and wait for some time. " +
-                          "If this message repeats, restart the app.");
-        CustomAlert notifyAlert = new CustomAlert(message,
-                "Connection error", ButtonType.OK);
+    private void notifyAboutFile() {
+        CustomAlert notifyAlert = new CustomAlert("File or target directory doesn't exist",
+                "Error", ButtonType.OK);
+        notifyAlert.showAndWait();
     }
 
     private Optional<ButtonType> notifyAlreadyExistingFile() {

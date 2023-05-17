@@ -26,6 +26,8 @@ public class CustomAlert extends Alert {
         this.setTitle(windowTitle);
         this.setContentText(errorText);
         this.getButtonTypes().addAll(buttons);
+        DialogPane dialogPane = this.getDialogPane();
+        dialogPane.setPrefWidth(450);
         this.getDialogPane().setStyle("-fx-font-size: 16;-fx-border-color: #a04ac0;-fx-border-width: 5");
         this.initStyle(StageStyle.UNDECORATED);
         this.initModality(Modality.WINDOW_MODAL);
@@ -38,7 +40,7 @@ public class CustomAlert extends Alert {
         DialogPane dialogPane = this.getDialogPane();
         dialogPane.setContent(filePanel);
         dialogPane.setPrefWidth(590);
-        dialogPane.setPrefHeight(600);
+        dialogPane.setPrefHeight(650);
         this.getButtonTypes().add(ButtonType.APPLY);
         this.initModality(Modality.APPLICATION_MODAL);
         this.setResizable(true);

@@ -18,6 +18,7 @@ import javafx.stage.WindowEvent;
 import rgr.sshApp.SshApp;
 import rgr.sshApp.model.ModelData;
 import rgr.sshApp.utils.CustomAlert;
+import rgr.sshApp.utils.files.panels.FilePanel;
 import rgr.sshApp.utils.files.panels.LocalPanel;
 import rgr.sshApp.utils.files.panels.RemotePanel;
 import rgr.sshApp.web.SecureShellSession;
@@ -52,10 +53,6 @@ public class ManagerController implements Initializable {
     private Button uploadButton;
     @FXML
     private Button downloadButton;
-    @FXML
-    private Button removeButton;
-    @FXML
-    private Button moveButton;
     @FXML
     private Button exitButton;
     @FXML
@@ -152,7 +149,7 @@ public class ManagerController implements Initializable {
         task.setOnSucceeded(event->{
             System.out.println("SUCCESS COMPLETED TASK IN NEW THREAD");
             Platform.runLater(()->{
-                if (managerStage.isShowing()) {
+                if (managerStage.isShowing() && sshSession.isEstablished()) {
                     localPanel.refresh();
                     remotePanel.refresh();
                 }
@@ -172,4 +169,5 @@ public class ManagerController implements Initializable {
             };
         }, (long) (seconds*1000));
     }
+
 }

@@ -18,14 +18,10 @@ public class SecureFtpChannel {
     private ChannelSftp sftpChannel;
     private LocalFiles localFiles;
 
-    public SecureFtpChannel(Session session) {
-        try {
-            this.sftpChannel = (ChannelSftp) session.openChannel("sftp");
-            this.sftpChannel.setBulkRequests(32);
-            this.localFiles = new LocalFiles();
-        } catch (JSchException exc) {
-            System.out.println("SFTPC.SecureShellChannel: opening channel error");
-        }
+    public SecureFtpChannel(Session session) throws JSchException {
+        this.sftpChannel = (ChannelSftp) session.openChannel("sftp");
+        this.sftpChannel.setBulkRequests(32);
+        this.localFiles = new LocalFiles();
     }
 
     public void connect() throws JSchException {
@@ -44,45 +40,31 @@ public class SecureFtpChannel {
         return state;
     }
 
-    public void uploadFile(String localFilePath, String remoteDir) {
+    public void uploadFile(String localFilePath, String remoteDir) throws SftpException {
         String fileName = localFiles.getFileName(localFilePath);
         String remoteFilePath = localFiles.getResolvedDirectory(remoteDir, fileName);
         String localDir = localFiles.getParentDirectory(localFilePath);
-        try {
-            if (!isExists(remoteDir,fileName) || isRemoteFileNewer(remoteFilePath,localDir,fileName)<0) {
-                sftpChannel.put(localFilePath, remoteDir);
-                System.out.println("UPLOADING FILE = " + fileName + " HAS FINISHED");
-            } else {
-                System.out.println("FIle already exists or has newer");
-            }
-        } catch (SftpException exc) {
-            System.out.println("SFTPC.uploadFile: uploading file error");
-            exc.printStackTrace();
+        if (!isExists(remoteDir,fileName) || isRemoteFileNewer(remoteFilePath,localDir,fileName)<0) {
+            sftpChannel.put(localFilePath, remoteDir);
+            System.out.println("UPLOADING FILE = " + fileName + " HAS FINISHED");
+        } else {
+            System.out.println("FIle already exists or has newer");
         }
     }
 
-    public void downloadFile(String remoteFilePath, String localDir) {
+    public void downloadFile(String remoteFilePath, String localDir) throws SftpException {
         String fileName = localFiles.getFileName(remoteFilePath);
-        try {
-            if (!localFiles.isExists(localDir,fileName) || isRemoteFileNewer(remoteFilePath, localDir,fileName)>0) {
-                sftpChannel.get(remoteFilePath, localDir);
-                System.out.println("DOWNLOADING FILE FROM " + remoteFilePath + " TO " + localDir + " HAS FINISHED");
-            }
-        } catch (SftpException exc) {
-            System.out.println("SFTPC.downloadFile: downloading file error");
-            exc.printStackTrace();
+        if (!localFiles.isExists(localDir,fileName) || isRemoteFileNewer(remoteFilePath, localDir,fileName)>0) {
+            sftpChannel.get(remoteFilePath, localDir);
+            System.out.println("DOWNLOADING FILE FROM " + remoteFilePath + " TO " + localDir + " HAS FINISHED");
         }
     }
 
-    public void deleteFile(String remoteDir, String fileName) {
-        try {
-            if (isExists(remoteDir,fileName)) {
-                changeDirectory(remoteDir);
-                sftpChannel.rm(fileName);
-                System.out.println("DELETING FILE = " + fileName + " IN " + remoteDir + " HAS FINISHED");
-            }
-        } catch (SftpException exc){
-            System.out.println("SFTPC.deleteFile: cannot remove " + fileName + ",no such file or directory");
+    public void deleteFile(String remoteDir, String fileName) throws SftpException {
+        if (isExists(remoteDir,fileName)) {
+            changeDirectory(remoteDir);
+            sftpChannel.rm(fileName);
+            System.out.println("DELETING FILE = " + fileName + " IN " + remoteDir + " HAS FINISHED");
         }
     }
 
@@ -95,15 +77,10 @@ public class SecureFtpChannel {
         }
     }
 
-    public String presentWorkingDirectory(){
+    public String presentWorkingDirectory() throws SftpException {
         String pwd = null;
-        try {
-            pwd = sftpChannel.pwd();
-            System.out.println("GETTING CURRENT PWD = " + pwd + " HAS FINISHED");
-        } catch (SftpException exc){
-            System.out.println("SFTPC.presentWorkingDirectory: pwd command error");
-            exc.printStackTrace();
-        }
+        pwd = sftpChannel.pwd();
+        System.out.println("GETTING CURRENT PWD = " + pwd + " HAS FINISHED");
         return pwd;
     }
 

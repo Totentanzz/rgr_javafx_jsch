@@ -13,4 +13,6 @@ module rgr.server.rgr_javafx_jsch {
     opens rgr.sshApp.utils.files.panels to javafx.fxml;
     exports rgr.sshApp.utils.files;
     opens rgr.sshApp.utils.files to javafx.base;
+    exports rgr.sshApp.utils.files.handlers;
+    opens rgr.sshApp.utils.files.handlers to javafx.base;
 }

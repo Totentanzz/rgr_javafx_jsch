@@ -2,9 +2,7 @@ package rgr.sshApp.utils.files;
 
 import com.jcraft.jsch.ChannelSftp;
 
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.*;
 
 
 import java.io.IOException;
@@ -12,22 +10,14 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.text.SimpleDateFormat;
 
-@Getter
-@Setter
-@ToString
+@Data
+@AllArgsConstructor
 public class FileInfo {
 
     private String fileName;
     private String fileType;
     private long fileSize;
     private String lastModifiedDate;
-
-    private FileInfo(String fileName, String fileType, long fileSize, String lastModifiedDate) {
-        this.fileName = fileName;
-        this.fileType = fileType;
-        this.fileSize = fileSize;
-        this.lastModifiedDate = lastModifiedDate;
-    }
 
     public static FileInfo parseFilePath(String filePath) {
         Path path = Path.of(filePath);

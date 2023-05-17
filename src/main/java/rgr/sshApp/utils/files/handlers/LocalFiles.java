@@ -2,15 +2,14 @@ package rgr.sshApp.utils.files.handlers;
 
 import com.jcraft.jsch.JSchException;
 
+import com.jcraft.jsch.SftpException;
 import rgr.sshApp.utils.files.FileInfo;
 import rgr.sshApp.web.SecureFtpChannel;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.nio.file.AccessDeniedException;
-import java.nio.file.FileSystems;
-import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
+import java.nio.file.*;
 import java.util.LinkedList;
 import java.util.stream.Collectors;
 
@@ -58,15 +57,37 @@ public class LocalFiles extends rgr.sshApp.utils.files.handlers.Files {
     }
 
     @Override
-    public void deleteFile(String path, String fileName) {
+    public void transferFile(String remoteTransferPath, String localFileDir, String fileName) throws JSchException, SftpException, FileNotFoundException {
+        Path localFilePath = Path.of(localFileDir).toAbsolutePath().normalize().resolve(fileName);
+        SecureFtpChannel newSftpChannel = null;
+        try {
+            newSftpChannel = new SecureFtpChannel(this.sshSession.getSession());
+            newSftpChannel.connect();
+            if (java.nio.file.Files.exists(localFilePath)) {
+                if (java.nio.file.Files.isDirectory(localFilePath) && !fileName.equals("..")) {
+                    uploadFolder(localFilePath, remoteTransferPath, fileName, newSftpChannel);
+                } else if (!java.nio.file.Files.isDirectory(localFilePath)) {
+                    newSftpChannel.uploadFile(localFilePath.toString(), remoteTransferPath);
+                }
+            } else {
+                throw new FileNotFoundException("File doesn't exist");
+            }
+        } finally {
+            System.out.println("Upload finished");
+            if (newSftpChannel!=null) newSftpChannel.disconnect();
+        }
+    }
+
+    @Override
+    public void deleteFile(String path, String fileName) throws FileNotFoundException {
         Path filePath = Path.of(path).toAbsolutePath().normalize().resolve(fileName);
         if (java.nio.file.Files.exists(filePath)) {
             try {
                 if (java.nio.file.Files.isDirectory(filePath)) {
                     java.nio.file.Files.walk(filePath)
-                                       .map(Path::toFile)
-                                       .sorted((o1,o2)-> -o1.compareTo(o2))
-                                       .forEach(File::delete);
+                            .map(Path::toFile)
+                            .sorted((o1,o2)-> -o1.compareTo(o2))
+                            .forEach(File::delete);
                     System.out.println("folder = " + filePath + " removed");
                 } else {
                     java.nio.file.Files.delete(filePath);
@@ -76,60 +97,41 @@ public class LocalFiles extends rgr.sshApp.utils.files.handlers.Files {
                 System.out.println("ManagerController.removeLocalFile: deleting error");
                 exc.printStackTrace();
             }
+        } else {
+            throw new FileNotFoundException("File doesn't exist");
         }
-    }
-
-    @Override
-    public void transferFile(String remoteTransferPath, String localFileDir, String fileName) throws JSchException {
-        Path localFilePath = Path.of(localFileDir).toAbsolutePath().normalize().resolve(fileName);
-        SecureFtpChannel newSftpChannel = new SecureFtpChannel(this.sshSession.getSession());
-        newSftpChannel.connect();
-        System.out.println("New channel is connected = " + newSftpChannel.isConnected());
-        System.out.println("Uploading file = " + localFilePath);
-        System.out.println("Uploading to the dir = " + remoteTransferPath);
-        if (java.nio.file.Files.exists(localFilePath)) {
-            if (java.nio.file.Files.isDirectory(localFilePath) && !fileName.equals("..")) {
-                uploadFolder(localFilePath,remoteTransferPath,fileName,newSftpChannel);
-            } else if (!java.nio.file.Files.isDirectory(localFilePath)) {
-                newSftpChannel.uploadFile(localFilePath.toString(),remoteTransferPath);
-            }
-        }
-        System.out.println("Upload finished");
-        newSftpChannel.disconnect();
-        System.out.println("New channel is disconnected = " + !newSftpChannel.isConnected());
     }
 
     @Override
     public void moveFile(String distDir, String srcDir, String fileName, boolean forceFlag, boolean createNewFlag) throws IOException {
         Path srcPath = Path.of(srcDir).toAbsolutePath().normalize().resolve(fileName);
         Path distPath = Path.of(distDir).toAbsolutePath().normalize().resolve(fileName);
-        boolean exists = java.nio.file.Files.exists(distPath);
-        if (!java.nio.file.Files.exists(distPath)) {
-            java.nio.file.Files.move(srcPath, distPath);
-        } else if (forceFlag) {
-            if (java.nio.file.Files.isDirectory(srcPath)) {
-                this.moveFolder(srcPath,distPath);
-                this.deleteFile(srcDir,fileName);
-            } else {
-                java.nio.file.Files.move(srcPath, distPath, StandardCopyOption.REPLACE_EXISTING);
-            }
-        } else if (createNewFlag) {
-            String newFileName = getNextFileName(fileName);
-            while (isExists(distDir,newFileName)) newFileName = getNextFileName(newFileName);
-            Path newSrcPath = srcPath.resolveSibling(newFileName);
-            Path newDistPath = distPath.resolveSibling(newFileName);
-            try {
+        if (java.nio.file.Files.exists(srcPath) && java.nio.file.Files.exists(distPath)) {
+            if (!java.nio.file.Files.exists(distPath)) {
+                java.nio.file.Files.move(srcPath, distPath);
+            } else if (forceFlag) {
+                if (java.nio.file.Files.isDirectory(srcPath)) {
+                    this.moveFolder(srcPath, distPath);
+                    this.deleteFile(srcDir, fileName);
+                } else {
+                    java.nio.file.Files.move(srcPath, distPath, StandardCopyOption.REPLACE_EXISTING);
+                }
+            } else if (createNewFlag) {
+                String newFileName = getNextFileName(fileName);
+                while (isExists(distDir, newFileName)) newFileName = getNextFileName(newFileName);
+                Path newSrcPath = srcPath.resolveSibling(newFileName);
+                Path newDistPath = distPath.resolveSibling(newFileName);
                 java.nio.file.Files.move(srcPath, newSrcPath);
                 java.nio.file.Files.move(newSrcPath, newDistPath);
-            } catch (AccessDeniedException exc) {
-                System.out.println("ACCESS DENIED TO RENAME OR RELOCATE FILE = " + srcPath);
+            } else {
+                throw new FileAlreadyExistsException("File already exists");
             }
         } else {
-            throw new IOException("File already exists");
+            throw new FileNotFoundException("File doesn't exist");
         }
     }
 
-    private void uploadFolder(Path localPath, String remotePath, String fileName, SecureFtpChannel channel) {
+    private void uploadFolder(Path localPath, String remotePath, String fileName, SecureFtpChannel channel) throws SftpException {
         try {
             String createdRemoteFolder = remotePath + "/" + fileName;
             channel.makeDir(remotePath,fileName);

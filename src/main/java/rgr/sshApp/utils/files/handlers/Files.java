@@ -1,7 +1,6 @@
 package rgr.sshApp.utils.files.handlers;
 
 import rgr.sshApp.model.ModelData;
-import rgr.sshApp.utils.files.FilePath;
 import rgr.sshApp.web.SecureShellSession;
 
 import java.util.regex.Matcher;
@@ -13,7 +12,7 @@ public abstract class Files implements FilePath {
     protected SecureShellSession sshSession;
 
     public Files() {
-        modelData=ModelData.getInstance();
+        modelData= ModelData.getInstance();
         sshSession=modelData.getSshSession();
     }
 
@@ -41,7 +40,7 @@ public abstract class Files implements FilePath {
             String[] parts = fileName.split("\\.(?=[^\\.]+$)");
             if (parts.length==2 && parts[0].isEmpty()) newFileName= "." + parts[1] + "-copy1";
             else if (parts.length==1) newFileName=parts[0] + "-copy1";
-            else newFileName=parts[0] + "-copy1" + parts[1];
+            else newFileName=parts[0] + "-copy1." + parts[1];
             System.out.println(newFileName);
         }
         return newFileName;

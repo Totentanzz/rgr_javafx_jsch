@@ -7,11 +7,7 @@ import com.jcraft.jsch.Session;
 
 import lombok.Data;
 
-import java.io.BufferedReader;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.util.Properties;
 
 @Data
@@ -38,9 +34,6 @@ public class SecureShellSession {
         checkingChannel.connect();
         fileListChannel = new SecureFtpChannel(session);
         fileListChannel.connect();
-        System.out.println("Session isCon: " + session.isConnected());
-        System.out.println("CheckChan isCon: " + checkingChannel.isConnected());
-        System.out.println("GetChan isCon: " + fileListChannel.isConnected());
     }
 
     public void disconnect() {
@@ -94,7 +87,7 @@ public class SecureShellSession {
             session.setPassword(passowrd);
             session.setConfig(loadSessionConfig());
             session.setTimeout(5000);
-        } catch (JSchException exc) {
+        } catch (JSchException | IOException exc) {
             System.out.println("SecureShellSession.getNewSession: invalid session params or timeout");
             exc.printStackTrace();
         }
@@ -108,19 +101,12 @@ public class SecureShellSession {
         }
     }
 
-    private static Properties loadSessionConfig() {
+    private static Properties loadSessionConfig() throws IOException {
         Properties sessionConfig = new Properties();
-        try {
-            sessionConfig.load(new FileInputStream(sessionConfigFile));
-        } catch (IOException e) {
-            sessionConfig.setProperty("PreferredAuthentications","password");
-            sessionConfig.setProperty("StrictHostKeyChecking", "no");
-            try {
-                sessionConfig.store(new FileOutputStream(sessionConfigFile), null);
-            } catch (IOException ex) {
-                ex.printStackTrace();
-            }
-        }
+        sessionConfig.load(new FileInputStream(sessionConfigFile));
+        sessionConfig.setProperty("PreferredAuthentications","password");
+        sessionConfig.setProperty("StrictHostKeyChecking", "no");
+        sessionConfig.store(new FileOutputStream(sessionConfigFile), null);
         return sessionConfig;
     }
 

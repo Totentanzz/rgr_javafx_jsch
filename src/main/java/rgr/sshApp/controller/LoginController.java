@@ -96,7 +96,7 @@ public class LoginController implements Initializable {
             errorAlert.initOwner(loginStage);
             errorAlert.showAndWait();
         } finally {
-            if (sshSession.isEstablished()) {
+            if (sshSession!=null && sshSession.isEstablished()) {
                 modelData.setSshSession(sshSession);
                 loginStage.close();
                 ManagerController.loadNewWindow();
@@ -159,9 +159,9 @@ public class LoginController implements Initializable {
     }
 
     private void setDefaultText() {
-        ipField.setText("3.74.216.87");
-        portField.setText("58716");
+        ipField.setText("35.158.120.30");
+        portField.setText("54971");
         usernameField.setText("root");
-        hidePassField.setText("VaBPAGi4kaufDblCV");
+        hidePassField.setText("A2B9M9SPgqnDLtByfsjHiHd");
     }
 }
