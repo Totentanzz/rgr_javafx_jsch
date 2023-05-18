@@ -282,10 +282,13 @@ public abstract class FilePanel extends VBox implements Initializable {
                     createNewFlag = true;
                     fileHandler.moveFile(distDir,srcDir,fileName,forceFlag,createNewFlag);
                 }
-            } catch (IOException | ExecutionException | InterruptedException exc1) {
+            } catch (IOException | ExecutionException | InterruptedException | SftpException exc1) {
+                System.out.println(2);
+                Platform.runLater(FilePanel::notifyConnectionError);
                 exc1.printStackTrace();
             }
-        } catch (IOException exc) {
+        } catch (IOException | SftpException exc) {
+            System.out.println(1);
             exc.printStackTrace();
         }
     }

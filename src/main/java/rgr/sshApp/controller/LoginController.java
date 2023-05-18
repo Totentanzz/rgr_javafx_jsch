@@ -160,8 +160,8 @@ public class LoginController implements Initializable {
 
     private void setDefaultText() {
         ipField.setText("3.74.216.87");
-        portField.setText("53870");
+        portField.setText("57502");
         usernameField.setText("root");
-        hidePassField.setText("78scFeVouY3KwKxYJk7O");
+        hidePassField.setText("tdpxP9FI71zEcUfloA8Psk");
     }
 }

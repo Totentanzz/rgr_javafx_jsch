@@ -24,14 +24,14 @@ public interface FilePath {
 
     String getResolvedDirectory(String currentPath, String fileName);
 
-    boolean isExists(String path, String fileName);
+    boolean isExists(String path, String fileName) throws SftpException;
 
-    boolean isDir(String path, String fileName);
+    boolean isDir(String path, String fileName) throws SftpException;
 
     void transferFile(String transferPath, String fileDir, String fileName) throws JSchException, SftpException, FileNotFoundException;
 
     void deleteFile(String path, String fileName) throws JSchException, SftpException, FileNotFoundException;
 
-    void moveFile(String distDir, String srcDir, String fileName, boolean forceFlag, boolean createNewFlag) throws IOException;
+    void moveFile(String distDir, String srcDir, String fileName, boolean forceFlag, boolean createNewFlag) throws IOException, SftpException;
 
 }

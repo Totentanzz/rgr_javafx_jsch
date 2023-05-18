@@ -104,24 +104,25 @@ public class LocalFilesHandler extends FilesHandler {
 
     @Override
     public void moveFile(String distDir, String srcDir, String fileName, boolean forceFlag, boolean createNewFlag) throws IOException {
-        Path srcPath = Path.of(srcDir).toAbsolutePath().normalize().resolve(fileName);
-        Path distPath = Path.of(distDir).toAbsolutePath().normalize().resolve(fileName);
-        if (Files.exists(srcPath) && Files.exists(distPath)) {
-            if (!Files.exists(distPath)) {
-                Files.move(srcPath, distPath);
+        Path srcFilePath = Path.of(srcDir).toAbsolutePath().normalize().resolve(fileName);
+        Path distDirPath = Path.of(distDir).toAbsolutePath().normalize();
+        Path distFilePath = distDirPath.resolve(fileName);
+        if (Files.exists(srcFilePath) && Files.exists(distDirPath)) {
+            if (!Files.exists(distFilePath)) {
+                Files.move(srcFilePath, distFilePath);
             } else if (forceFlag) {
-                if (Files.isDirectory(srcPath)) {
-                    this.moveFolder(srcPath, distPath);
+                if (Files.isDirectory(srcFilePath)) {
+                    this.moveFolder(srcFilePath, distFilePath);
                     this.deleteFile(srcDir, fileName);
                 } else {
-                    Files.move(srcPath, distPath, StandardCopyOption.REPLACE_EXISTING);
+                    Files.move(srcFilePath, distFilePath, StandardCopyOption.REPLACE_EXISTING);
                 }
             } else if (createNewFlag) {
                 String newFileName = getNextFileName(fileName);
                 while (isExists(distDir, newFileName)) newFileName = getNextFileName(newFileName);
-                Path newSrcPath = srcPath.resolveSibling(newFileName);
-                Path newDistPath = distPath.resolveSibling(newFileName);
-                Files.move(srcPath, newSrcPath);
+                Path newSrcPath = srcFilePath.resolveSibling(newFileName);
+                Path newDistPath = distFilePath.resolveSibling(newFileName);
+                Files.move(srcFilePath, newSrcPath);
                 Files.move(newSrcPath, newDistPath);
             } else {
                 throw new FileAlreadyExistsException("File already exists");

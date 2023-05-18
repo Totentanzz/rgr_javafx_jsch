@@ -67,13 +67,9 @@ public class SecureFtpChannel {
         }
     }
 
-    public void changeDirectory(String remoteDir) {
-        try {
-            sftpChannel.cd(remoteDir);
-            System.out.println("CHANGING DIRECTORY TO = " + remoteDir + " HAS FINISHED");
-        } catch (SftpException exc){
-            System.out.println("SFTPC.changeDirectory: cannot access " + remoteDir + ", no such file or directory");
-        }
+    public void changeDirectory(String remoteDir) throws SftpException {
+        sftpChannel.cd(remoteDir);
+        System.out.println("CHANGING DIRECTORY TO = " + remoteDir + " HAS FINISHED");
     }
 
     public String presentWorkingDirectory() throws SftpException {
@@ -90,30 +86,20 @@ public class SecureFtpChannel {
         return fileList;
     }
 
-    public void makeDir(String remoteFilePath) {
+    public void makeDir(String remoteFilePath) throws SftpException {
         String parentDir = localFiles.getParentDirectory(remoteFilePath);
         String folderName = localFiles.getFileName(remoteFilePath);
-        try {
-            if (!isExists(parentDir,folderName)) {
-                sftpChannel.mkdir(folderName);
-                System.out.println("CREATING FOLDER IN CURRENT DIR = " + folderName + " HAS FINISHED");
-            }
-        } catch (SftpException exc){
-            System.out.println("SFTPC.makeDir: mkdir command error");
-            exc.printStackTrace();
+        if (!isExists(parentDir,folderName)) {
+            sftpChannel.mkdir(folderName);
+            System.out.println("CREATING FOLDER IN CURRENT DIR = " + folderName + " HAS FINISHED");
         }
     }
 
-    public void makeDir(String remotePath, String folderName) {
-        try {
-            if (!isExists(remotePath,folderName)) {
-                changeDirectory(remotePath);
-                sftpChannel.mkdir(folderName);
-                System.out.println("CREATING IN DIR = " + remotePath + " FOLDER = " + folderName + " HAS FINISHED");
-            }
-        } catch (SftpException exc) {
-            System.out.println("SFTPC.makeDir: mkdir command error");
-            exc.printStackTrace();
+    public void makeDir(String remotePath, String folderName) throws SftpException {
+        if (!isExists(remotePath,folderName)) {
+            changeDirectory(remotePath);
+            sftpChannel.mkdir(folderName);
+            System.out.println("CREATING IN DIR = " + remotePath + " FOLDER = " + folderName + " HAS FINISHED");
         }
     }
 
@@ -127,9 +113,9 @@ public class SecureFtpChannel {
         return attrs;
     }
 
-    public boolean isExists(String path, String fileName) {
-        boolean existing = false;
-        SftpATTRS attrs = null;
+    public boolean isExists(String path, String fileName) throws SftpException {
+        boolean existing;
+        SftpATTRS attrs;
         changeDirectory(path);
         attrs = getAttrs(fileName);
         existing = (attrs != null);
@@ -137,9 +123,9 @@ public class SecureFtpChannel {
         return existing;
     }
 
-    public boolean isDir(String path, String fileName) {
+    public boolean isDir(String path, String fileName) throws SftpException {
         boolean isDir = false;
-        SftpATTRS attrs = null;
+        SftpATTRS attrs;
         changeDirectory(path);
         attrs = getAttrs(fileName);
         isDir = attrs.isDir();
@@ -157,7 +143,7 @@ public class SecureFtpChannel {
             attrs = getAttrs(fileName);
             localMTime = Files.getLastModifiedTime(localFilePath).to(TimeUnit.SECONDS);
             remoteMTime = attrs.getMTime();
-        } catch (IOException exc) {
+        } catch (IOException | SftpException exc) {
             System.out.println("SecureShell.isRemoteFileNewer: can't get LastModifiedTime");
         }
         long state = remoteMTime - localMTime;

@@ -57,12 +57,12 @@ public class RemoteFilesHandler extends FilesHandler {
     }
 
     @Override
-    public boolean isExists(String path, String fileName) {
+    public boolean isExists(String path, String fileName) throws SftpException {
         return chekingChannel.isExists(path,fileName);
     }
 
     @Override
-    public boolean isDir(String path, String fileName) {
+    public boolean isDir(String path, String fileName) throws SftpException {
         return chekingChannel.isDir(path,fileName);
     }
 
@@ -116,7 +116,7 @@ public class RemoteFilesHandler extends FilesHandler {
     }
 
     @Override
-    public void moveFile(String distDir, String srcDir, String fileName, boolean forceFlag, boolean createNewFlag) throws IOException {
+    public void moveFile(String distDir, String srcDir, String fileName, boolean forceFlag, boolean createNewFlag) throws IOException, SftpException {
         String srcFilePath = srcDir + "/" + fileName;
         String parentDistPath = getParentDirectory(distDir);
         String distFolderName = getFileName(distDir);
