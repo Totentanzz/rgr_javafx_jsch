@@ -14,6 +14,7 @@ import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
+import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.Window;
 
@@ -160,8 +161,7 @@ public abstract class FilePanel extends VBox implements Initializable {
                          "server is ready for SSH connections.";
         CustomAlert notifyAlert = new CustomAlert(message,
                 "Connection error", ButtonType.OK);
-        ObservableList<Window> windowList = Window.getWindows().filtered(window-> window instanceof Stage);
-        notifyAlert.initOwner(windowList.get(0));
+        notifyAlert.initOwner(Window.getWindows().get(0));
         notifyAlert.showAndWait();
     }
 
@@ -288,8 +288,7 @@ public abstract class FilePanel extends VBox implements Initializable {
                 exc1.printStackTrace();
             }
         } catch (IOException | SftpException exc) {
-            System.out.println(1);
-            exc.printStackTrace();
+            System.out.println("Lost connection");
         }
     }
 

@@ -42,7 +42,7 @@ public class CustomAlert extends Alert {
         dialogPane.setPrefWidth(590);
         dialogPane.setPrefHeight(650);
         this.getButtonTypes().add(ButtonType.APPLY);
-//        this.initModality(Modality.APPLICATION_MODAL);
+        this.initModality(Modality.APPLICATION_MODAL);
         this.setResizable(true);
         Stage panelStage = (Stage) this.getDialogPane().getScene().getWindow();
         panelStage.getIcons().add(new Image(Objects.requireNonNull(SshApp.class.getResourceAsStream("images/files-and-folders.png"))));

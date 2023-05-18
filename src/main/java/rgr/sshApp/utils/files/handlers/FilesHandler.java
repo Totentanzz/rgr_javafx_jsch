@@ -67,7 +67,7 @@ public abstract class FilesHandler implements FilePath {
     public String getResolvedDirectory(String currentPath, String fileName) {
         String separator = currentPath.contains("/") ? "/" : "\\";
         String resolvedDir = null;
-        if (currentPath.equals(separator) || currentPath.charAt(2)=='\\') {
+        if (currentPath.equals(separator) || (currentPath.charAt(2)=='\\' && currentPath.length()==3)) {
             resolvedDir = currentPath + fileName;
         }
         else {
