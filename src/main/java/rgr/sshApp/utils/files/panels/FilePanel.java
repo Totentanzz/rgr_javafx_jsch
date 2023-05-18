@@ -21,7 +21,7 @@ import rgr.sshApp.SshApp;
 import rgr.sshApp.model.ModelData;
 import rgr.sshApp.utils.CustomAlert;
 import rgr.sshApp.utils.files.FileInfo;
-import rgr.sshApp.utils.files.handlers.Files;
+import rgr.sshApp.utils.files.handlers.FilesHandler;
 import rgr.sshApp.web.SecureShellSession;
 
 import java.io.FileNotFoundException;
@@ -52,7 +52,7 @@ public abstract class FilePanel extends VBox implements Initializable {
     @FXML
     private VBox panelBox;
 
-    protected Files fileHandler;
+    protected FilesHandler fileHandler;
 
     public FilePanel() {
         super();
@@ -116,7 +116,7 @@ public abstract class FilePanel extends VBox implements Initializable {
             fileTable.getItems().clear();
             fileTable.getItems().addAll(fileHandler.getFileList(path));
             fileTable.sort();
-        } catch (NullPointerException exc) {
+        } catch (NullPointerException | SftpException exc) {
             message = "Getting list of files/connection error. Please, make sure that selected " +
                     "folder is existing and you are connected by SSH";
         } catch (IOException exc) {

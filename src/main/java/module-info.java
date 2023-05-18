@@ -8,6 +8,7 @@ module rgr.server.rgr_javafx_jsch {
     opens rgr.sshApp to javafx.graphics;
     exports rgr.sshApp.web;
     exports rgr.sshApp.controller;
+    exports rgr.sshApp.model;
     opens rgr.sshApp.controller to javafx.fxml;
     exports rgr.sshApp.utils.files.panels;
     opens rgr.sshApp.utils.files.panels to javafx.fxml;

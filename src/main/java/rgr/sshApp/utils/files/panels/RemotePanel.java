@@ -2,14 +2,14 @@ package rgr.sshApp.utils.files.panels;
 
 
 import com.jcraft.jsch.SftpException;
-import rgr.sshApp.utils.files.handlers.RemoteFiles;
+import rgr.sshApp.utils.files.handlers.RemoteFilesHandler;
 import rgr.sshApp.web.SecureFtpChannel;
 
 public class RemotePanel extends FilePanel {
 
     public RemotePanel() {
         super();
-        this.fileHandler = new RemoteFiles();
+        this.fileHandler = new RemoteFilesHandler();
         initComboBox();
         try {
             updateTable(fileHandler.getInitialPath());
@@ -19,11 +19,11 @@ public class RemotePanel extends FilePanel {
     }
 
     public void setChannels(SecureFtpChannel checkChannel, SecureFtpChannel fileListChannel) {
-        ((RemoteFiles)fileHandler).setChannels(checkChannel,fileListChannel);
+        ((RemoteFilesHandler)fileHandler).setChannels(checkChannel,fileListChannel);
     }
 
-    public RemoteFiles getRemoteFiles() {
-        return ((RemoteFiles) fileHandler);
+    public RemoteFilesHandler getRemoteFiles() {
+        return ((RemoteFilesHandler) fileHandler);
     }
 
 }

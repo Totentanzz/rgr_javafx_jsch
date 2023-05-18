@@ -6,9 +6,10 @@ import com.jcraft.jsch.Session;
 import com.jcraft.jsch.SftpException;
 import com.jcraft.jsch.SftpATTRS;
 
-import rgr.sshApp.utils.files.handlers.LocalFiles;
+import rgr.sshApp.utils.files.handlers.LocalFilesHandler;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Vector;
 import java.util.concurrent.TimeUnit;
@@ -16,12 +17,12 @@ import java.util.concurrent.TimeUnit;
 public class SecureFtpChannel {
 
     private ChannelSftp sftpChannel;
-    private LocalFiles localFiles;
+    private LocalFilesHandler localFiles;
 
     public SecureFtpChannel(Session session) throws JSchException {
         this.sftpChannel = (ChannelSftp) session.openChannel("sftp");
         this.sftpChannel.setBulkRequests(32);
-        this.localFiles = new LocalFiles();
+        this.localFiles = new LocalFilesHandler();
     }
 
     public void connect() throws JSchException {
@@ -47,8 +48,6 @@ public class SecureFtpChannel {
         if (!isExists(remoteDir,fileName) || isRemoteFileNewer(remoteFilePath,localDir,fileName)<0) {
             sftpChannel.put(localFilePath, remoteDir);
             System.out.println("UPLOADING FILE = " + fileName + " HAS FINISHED");
-        } else {
-            System.out.println("FIle already exists or has newer");
         }
     }
 
@@ -84,14 +83,10 @@ public class SecureFtpChannel {
         return pwd;
     }
 
-    public Vector<ChannelSftp.LsEntry> listDirectory(String remoteDir) {
+    public Vector<ChannelSftp.LsEntry> listDirectory(String remoteDir) throws SftpException {
         Vector<ChannelSftp.LsEntry> fileList = null;
-        try {
-            fileList = sftpChannel.ls(remoteDir);
-            System.out.println("GETTING FILE LIST HAS FINISHED");
-        } catch (SftpException exc){
-            System.out.println("SFTPC.listDirectory: cannot access " + remoteDir + ", no such file or directory");
-        }
+        fileList = sftpChannel.ls(remoteDir);
+        System.out.println("GETTING FILE LIST HAS FINISHED");
         return fileList;
     }
 
@@ -154,13 +149,13 @@ public class SecureFtpChannel {
 
     public long isRemoteFileNewer(String remoteFilePath, String localDir, String fileName) {
         SftpATTRS attrs = null;
-        String remoteParentDir = getParent(remoteFilePath);
+        String remoteParentDir = localFiles.getParentDirectory(remoteFilePath);
         Path localFilePath = Path.of(localDir).toAbsolutePath().normalize().resolve(fileName);
         long localMTime = 0, remoteMTime = 0;
         try {
             changeDirectory(remoteParentDir);
             attrs = getAttrs(fileName);
-            localMTime = java.nio.file.Files.getLastModifiedTime(localFilePath).to(TimeUnit.SECONDS);
+            localMTime = Files.getLastModifiedTime(localFilePath).to(TimeUnit.SECONDS);
             remoteMTime = attrs.getMTime();
         } catch (IOException exc) {
             System.out.println("SecureShell.isRemoteFileNewer: can't get LastModifiedTime");
@@ -168,19 +163,6 @@ public class SecureFtpChannel {
         long state = remoteMTime - localMTime;
         System.out.println("REMOTE FILE = " + fileName + " IS NEWER = " + state);
         return state;
-    }
-
-    private String getParent(String remoteFilePath) {
-        char separatorChar = remoteFilePath.contains("/") ? '/' : '\\';
-        int lastSlashIndex = remoteFilePath.lastIndexOf(separatorChar);
-        String parentDir = null;
-        if (lastSlashIndex==0 && !remoteFilePath.equals(String.valueOf(separatorChar))) {
-            parentDir = String.valueOf(separatorChar);
-        }
-        else if (lastSlashIndex!=0) {
-            parentDir = remoteFilePath.substring(0,lastSlashIndex);
-        }
-        return parentDir;
     }
 
 }

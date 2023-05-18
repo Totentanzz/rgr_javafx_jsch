@@ -11,17 +11,18 @@ import rgr.sshApp.web.SecureFtpChannel;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.FileAlreadyExistsException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.LinkedList;
 import java.util.Vector;
 import java.util.stream.Collectors;
 
-public class RemoteFiles extends Files {
+public class RemoteFilesHandler extends FilesHandler {
 
     private SecureFtpChannel gettingFileListChannel;
     private SecureFtpChannel chekingChannel;
 
-    public RemoteFiles() {
+    public RemoteFilesHandler() {
         super();
         this.gettingFileListChannel = this.sshSession.getFileListChannel();
         this.chekingChannel = this.sshSession.getCheckingChannel();
@@ -33,7 +34,7 @@ public class RemoteFiles extends Files {
     }
 
     @Override
-    public LinkedList<FileInfo> getFileList(String path) throws IOException {
+    public LinkedList<FileInfo> getFileList(String path) throws SftpException {
         LinkedList<FileInfo> fileInfos = null;
         Vector<ChannelSftp.LsEntry> fileList = gettingFileListChannel.listDirectory(path);
         if (fileList !=null) {
@@ -172,7 +173,7 @@ public class RemoteFiles extends Files {
         System.out.println("folderName: " + fileName);
         System.out.println("created local folder: " + createdLocalFolder);
         try {
-            if (!java.nio.file.Files.exists(createdLocalFolder)) java.nio.file.Files.createDirectory(createdLocalFolder);
+            if (!Files.exists(createdLocalFolder)) Files.createDirectory(createdLocalFolder);
             System.out.println("Created dir path: " + createdLocalFolder);
             Vector<ChannelSftp.LsEntry> files = channel.listDirectory(remotePath);
             for (ChannelSftp.LsEntry file : files) {

@@ -6,12 +6,12 @@ import rgr.sshApp.web.SecureShellSession;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public abstract class Files implements FilePath {
+public abstract class FilesHandler implements FilePath {
 
     protected ModelData modelData;
     protected SecureShellSession sshSession;
 
-    public Files() {
+    public FilesHandler() {
         modelData= ModelData.getInstance();
         sshSession=modelData.getSshSession();
     }
@@ -41,7 +41,6 @@ public abstract class Files implements FilePath {
             if (parts.length==2 && parts[0].isEmpty()) newFileName= "." + parts[1] + "-copy1";
             else if (parts.length==1) newFileName=parts[0] + "-copy1";
             else newFileName=parts[0] + "-copy1." + parts[1];
-            System.out.println(newFileName);
         }
         return newFileName;
     }

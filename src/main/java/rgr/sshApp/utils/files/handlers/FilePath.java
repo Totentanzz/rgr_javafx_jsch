@@ -14,7 +14,7 @@ public interface FilePath {
 
     String getNextFileName(String fileName);
 
-    LinkedList<FileInfo> getFileList(String path) throws IOException;
+    LinkedList<FileInfo> getFileList(String path) throws IOException, SftpException;
 
     LinkedList<String> getRootDirectories();
 
