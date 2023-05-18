@@ -73,15 +73,13 @@ public class SecureFtpChannel {
     }
 
     public String presentWorkingDirectory() throws SftpException {
-        String pwd = null;
-        pwd = sftpChannel.pwd();
+        String pwd = sftpChannel.pwd();
         System.out.println("GETTING CURRENT PWD = " + pwd + " HAS FINISHED");
         return pwd;
     }
 
     public Vector<ChannelSftp.LsEntry> listDirectory(String remoteDir) throws SftpException {
-        Vector<ChannelSftp.LsEntry> fileList = null;
-        fileList = sftpChannel.ls(remoteDir);
+        Vector<ChannelSftp.LsEntry> fileList = sftpChannel.ls(remoteDir);
         System.out.println("GETTING FILE LIST HAS FINISHED");
         return fileList;
     }
@@ -114,21 +112,17 @@ public class SecureFtpChannel {
     }
 
     public boolean isExists(String path, String fileName) throws SftpException {
-        boolean existing;
-        SftpATTRS attrs;
         changeDirectory(path);
-        attrs = getAttrs(fileName);
-        existing = (attrs != null);
+        SftpATTRS attrs = getAttrs(fileName);
+        boolean existing = (attrs != null);
         System.out.println("FILE IS EXISTING = " + existing);
         return existing;
     }
 
     public boolean isDir(String path, String fileName) throws SftpException {
-        boolean isDir = false;
-        SftpATTRS attrs;
         changeDirectory(path);
-        attrs = getAttrs(fileName);
-        isDir = attrs.isDir();
+        SftpATTRS attrs = getAttrs(fileName);
+        boolean isDir = attrs.isDir();
         System.out.println("FILE IS DIR = " + isDir);
         return isDir;
     }

@@ -89,7 +89,6 @@ public class FileInfo {
             date = dateFormat.format(Files.getLastModifiedTime(curPath).toMillis());
         } catch (IOException exc) {
             System.out.println("FileInfo.getLastModificationDate: cannot get formatted date");
-            exc.printStackTrace();
         }
         return date;
     }

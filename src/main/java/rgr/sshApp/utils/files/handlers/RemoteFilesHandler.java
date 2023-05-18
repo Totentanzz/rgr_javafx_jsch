@@ -117,7 +117,7 @@ public class RemoteFilesHandler extends FilesHandler {
 
     @Override
     public void moveFile(String distDir, String srcDir, String fileName, boolean forceFlag, boolean createNewFlag) throws IOException, SftpException {
-        String srcFilePath = srcDir + "/" + fileName;
+        String srcFilePath = (!srcDir.equals("/")) ? srcDir + "/" + fileName : srcDir + fileName;
         String parentDistPath = getParentDirectory(distDir);
         String distFolderName = getFileName(distDir);
         String moveCommand = new StringBuilder()

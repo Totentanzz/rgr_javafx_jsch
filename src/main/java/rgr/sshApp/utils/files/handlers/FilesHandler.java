@@ -21,8 +21,10 @@ public abstract class FilesHandler implements FilePath {
         char separatorChar = filePath.contains("/") ? '/' : '\\';
         int lastSeparatorIndex = filePath.lastIndexOf(separatorChar);
         String fileName = null;
-        if (lastSeparatorIndex!=0) {
+        if (filePath.length() > 1) {
             fileName = filePath.substring(lastSeparatorIndex + 1);
+        } else if (filePath.length()==1) {
+            fileName=filePath;
         }
         return fileName;
     }
@@ -65,7 +67,7 @@ public abstract class FilesHandler implements FilePath {
     public String getResolvedDirectory(String currentPath, String fileName) {
         String separator = currentPath.contains("/") ? "/" : "\\";
         String resolvedDir = null;
-        if (currentPath.equals(separator)) {
+        if (currentPath.equals(separator) || currentPath.charAt(2)=='\\') {
             resolvedDir = currentPath + fileName;
         }
         else {
